@@ -31,7 +31,7 @@ session_id = os.path.normpath('G:\\Shared drives\\Stanford Football Prototyping\
 
 
 # Specify trial names in a list; use None to process all trials in a session.
-specific_trial_names = ['ACEEL_LSTM', 'DECEL_LSTM']
+specific_trial_names = ['ACCEL_LSTM','DECEL_LSTM']
 
 # Specify where to download the data.
 data_folder = os.path.join(session_id)
@@ -136,6 +136,12 @@ output_csv_dir = os.path.join(data_folder, 'Kinematics', 'Outputs')
 os.makedirs(output_csv_dir, exist_ok=True)
 output_csv_path = os.path.join(output_csv_dir, 'coordinate_speeds_{}.csv'.format(trial_names[0]))
 coordinates['speeds'][trial_names[0]].to_csv(output_csv_path)
+
+# %% Print as csv: example.
+output_csv_dir = os.path.join(data_folder, 'Kinematics', 'Outputs')
+os.makedirs(output_csv_dir, exist_ok=True)
+output_csv_path = os.path.join(output_csv_dir, 'muscle_tendon_lengths_{}.csv'.format(trial_names[0]))
+muscle_tendon_lengths[trial_names[0]].to_csv(output_csv_path)
 
 # %% Plot: examples.
 # Plot all coordinate values against time.

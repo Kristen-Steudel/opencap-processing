@@ -32,13 +32,31 @@ import platform
 import opensim
 
 from utilsAPI import get_api_url
-from utilsAuthentication import get_token
 import matplotlib.pyplot as plt
 from scipy.signal.windows import gaussian
 
 
 API_URL = get_api_url()
-API_TOKEN = get_token()
+
+# Lazy API token retrieval: call get_api_token() when an API call needs authorization.
+_API_TOKEN = None
+
+def get_api_token():
+    """Return cached API token, prompting for credentials only if needed."""
+    global _API_TOKEN
+    if _API_TOKEN is None:
+        # import inside function to avoid side-effects at module import time
+        from utilsAuthentication import get_token
+        _API_TOKEN = get_token()
+    return _API_TOKEN
+
+def auth_headers(token=None):
+    """Return authorization headers for requests. If `token` is provided it is used,
+    otherwise the module-cached token is obtained via `get_api_token()`.
+    """
+    if token is None:
+        token = get_api_token()
+    return {"Authorization": "Token {}".format(token)}
 
 def download_file(url, file_name):
     with urllib.request.urlopen(url) as response, open(file_name, 'wb') as out_file:
@@ -47,7 +65,7 @@ def download_file(url, file_name):
 def get_session_json(session_id):
     resp = requests.get(
         API_URL + "sessions/{}/".format(session_id),
-        headers = {"Authorization": "Token {}".format(API_TOKEN)})
+        headers = auth_headers())
     
     if resp.status_code == 500:
         raise Exception('No server response. Likely not a valid session id.')
@@ -67,39 +85,42 @@ def get_session_json(session_id):
 def get_user_sessions():
     sessions = requests.get(
         API_URL + "sessions/valid/", 
-        headers = {"Authorization": "Token {}".format(API_TOKEN)}).json()
+        headers = auth_headers()).json()
     
     return sessions
 
 # Returns a list of all sessions of the user.
 # TODO: this also contains public sessions of other users.
-def get_user_sessions_all(user_token=API_TOKEN):
-    sessions = requests.get(
-        API_URL + "sessions/", 
-        headers = {"Authorization": "Token {}".format(user_token)}).json()
-    
+def get_user_sessions_all(user_token=None):
+    if user_token is None:
+        headers = auth_headers()
+    else:
+        headers = {"Authorization": "Token {}".format(user_token)}
+    sessions = requests.get(API_URL + "sessions/", headers = headers).json()
     return sessions
 
 # Returns a list of all subjects of the user.
-def get_user_subjects(user_token=API_TOKEN):
-    subjects = requests.get(
-            API_URL + "subjects/", 
-            headers = {"Authorization": "Token {}".format(user_token)}).json()
-    
+def get_user_subjects(user_token=None):
+    if user_token is None:
+        headers = auth_headers()
+    else:
+        headers = {"Authorization": "Token {}".format(user_token)}
+    subjects = requests.get(API_URL + "subjects/", headers = headers).json()
     return subjects
 
 # Returns a list of all sessions of a subject.
-def get_subject_sessions(subject_id, user_token=API_TOKEN):
-    sessions = requests.get(
-        API_URL + "subjects/{}/".format(subject_id),
-        headers = {"Authorization": "Token {}".format(user_token)}).json()['sessions']
-    
+def get_subject_sessions(subject_id, user_token=None):
+    if user_token is None:
+        headers = auth_headers()
+    else:
+        headers = {"Authorization": "Token {}".format(user_token)}
+    sessions = requests.get(API_URL + "subjects/{}/".format(subject_id), headers = headers).json()['sessions']
     return sessions
 
 def get_trial_json(trial_id):
     trialJson = requests.get(
         API_URL + "trials/{}/".format(trial_id),
-        headers = {"Authorization": "Token {}".format(API_TOKEN)}).json()
+        headers = auth_headers()).json()
     
     return trialJson
 
@@ -469,8 +490,7 @@ def download_videos_from_server(session_id,trial_id,
     if not os.path.exists(session_path): 
         os.makedirs(session_path, exist_ok=True)
     
-    resp = requests.get("{}trials/{}/".format(API_URL,trial_id),
-                         headers = {"Authorization": "Token {}".format(API_TOKEN)})
+    resp = requests.get("{}trials/{}/".format(API_URL,trial_id), headers=auth_headers())
     trial = resp.json()
     if trial_name is None:
         trial_name = trial['name']
@@ -511,8 +531,7 @@ def download_videos_from_server(session_id,trial_id,
 def get_calibration(session_id,session_path):
     calibration_id = get_calibration_trial_id(session_id)
 
-    resp = requests.get("{}trials/{}/".format(API_URL,calibration_id),
-                         headers = {"Authorization": "Token {}".format(API_TOKEN)})
+    resp = requests.get("{}trials/{}/".format(API_URL,calibration_id), headers=auth_headers())
     trial = resp.json()
     calibResultTags = [res['tag'] for res in trial['results']]
    
@@ -535,8 +554,7 @@ def get_calibration(session_id,session_path):
 def download_and_switch_calibration(session_id,session_path,calibTrialID = None):
     if calibTrialID == None:
         calibTrialID = get_calibration_trial_id(session_id)
-    resp = requests.get("https://api.opencap.ai/trials/{}/".format(calibTrialID),
-                         headers = {"Authorization": "Token {}".format(API_TOKEN)})
+    resp = requests.get("https://api.opencap.ai/trials/{}/".format(calibTrialID), headers=auth_headers())
     trial = resp.json()
        
     calibURLs = {t['device_id']:t['media'] for t in trial['results'] if t['tag'] == 'calibration_parameters_options'}
@@ -571,8 +589,7 @@ def post_file_to_trial(filePath,trial_id,tag,device_id):
         "device_id" : device_id
     }
 
-    requests.post("{}results/".format(API_URL), files=files, data=data,
-                         headers = {"Authorization": "Token {}".format(API_TOKEN)})
+    requests.post("{}results/".format(API_URL), files=files, data=data, headers=auth_headers())
     files["media"].close()
 
 def post_video_to_trial(filePath,trial_id,device_id,parameters):
@@ -583,14 +600,12 @@ def post_video_to_trial(filePath,trial_id,device_id,parameters):
         "parameters": parameters
     }
 
-    requests.post("{}videos/".format(API_URL), files=files, data=data,
-                         headers = {"Authorization": "Token {}".format(API_TOKEN)})
+    requests.post("{}videos/".format(API_URL), files=files, data=data, headers=auth_headers())
     files["video"].close()
 
 def delete_video_from_trial(video_id):
 
-    requests.delete("{}videos/{}/".format(API_URL, video_id),
-                        headers = {"Authorization": "Token {}".format(API_TOKEN)})
+    requests.delete("{}videos/{}/".format(API_URL, video_id), headers=auth_headers())
     
 def delete_results(trial_id, tag=None, resultNum=None):
     # Delete specific result number, or all results with a specific tag, or all results if tag==None
@@ -605,8 +620,7 @@ def delete_results(trial_id, tag=None, resultNum=None):
         resultNums = [r['id'] for r in trial['results']]
 
     for rNum in resultNums:
-        requests.delete(API_URL + "results/{}/".format(rNum),
-                        headers = {"Authorization": "Token {}".format(API_TOKEN)})
+        requests.delete(API_URL + "results/{}/".format(rNum), headers=auth_headers())
         
 def set_trial_status(trial_id, status):
 
@@ -616,16 +630,13 @@ def set_trial_status(trial_id, status):
     if status not in ['done', 'error', 'stopped', 'reprocess']:
         raise ValueError('Invalid status. Available statuses: done, error, stopped, reprocess')
 
-    requests.patch(API_URL+"trials/{}/".format(trial_id), data={'status': status},
-                     headers = {"Authorization": "Token {}".format(API_TOKEN)})
+    requests.patch(API_URL+"trials/{}/".format(trial_id), data={'status': status}, headers=auth_headers())
     
 def set_session_subject(session_id, subject_id):
-    requests.patch(API_URL+"sessions/{}/".format(session_id), data={'subject': subject_id},
-                     headers = {"Authorization": "Token {}".format(API_TOKEN)})  
+    requests.patch(API_URL+"sessions/{}/".format(session_id), data={'subject': subject_id}, headers=auth_headers())  
 
 def get_syncd_videos(trial_id,session_path):
-    trial = requests.get("{}trials/{}/".format(API_URL,trial_id),
-                         headers = {"Authorization": "Token {}".format(API_TOKEN)}).json()
+    trial = requests.get("{}trials/{}/".format(API_URL,trial_id), headers=auth_headers()).json()
     trial_name = trial['name']
     
     if trial['results']:

@@ -19,6 +19,7 @@
 '''
 
 import os
+import glob
 import opensim
 import copy
 import utils
@@ -54,9 +55,28 @@ class kinematics:
             modelPath = os.path.join(modelBasePath,
                                  '{}.osim'.format(modelName))
             
-        # make sure model exists
+        # make sure model exists. If the model is nested under a subfolder
+        # (e.g. OpenSimData/<variant>/<camera>/Model/...), search recursively
+        # under the session's OpenSimData folder for a matching .osim file.
         if not os.path.exists(modelPath):
-            raise Exception('Model path: ' + modelPath + ' does not exist.')
+            search_root = os.path.join(sessionDir, 'OpenSimData')
+            candidates = []
+            if os.path.exists(search_root):
+                if modelName is not None:
+                    candidates = glob.glob(os.path.join(search_root, '**', f'{modelName}.osim'), recursive=True)
+                if not candidates:
+                    candidates = glob.glob(os.path.join(search_root, '**', '*.osim'), recursive=True)
+            # also try searching from sessionDir as a last resort
+            if not candidates:
+                if modelName is not None:
+                    candidates = glob.glob(os.path.join(sessionDir, '**', f'{modelName}.osim'), recursive=True)
+                if not candidates:
+                    candidates = glob.glob(os.path.join(sessionDir, '**', '*.osim'), recursive=True)
+
+            if candidates:
+                modelPath = candidates[0]
+            else:
+                raise Exception('Model path: ' + modelPath + ' does not exist. Searched under: ' + search_root)
 
         self.model = opensim.Model(modelPath)
         self.model.initSystem()
@@ -64,7 +84,26 @@ class kinematics:
         # Motion file with coordinate values.
         motionPath = os.path.join(sessionDir, 'OpenSimData', 'Kinematics',
                                   '{}.mot'.format(trialName))
-        
+        # If motionPath doesn't exist, search recursively under sessionDir
+        # (or under OpenSimData) for a matching .mot file. This supports
+        # nested Kinematics folders such as OpenSimData/<variant>/<camera>/Kinematics.
+        if not os.path.exists(motionPath):
+            search_root = os.path.join(sessionDir, 'OpenSimData')
+            candidates = []
+            if os.path.exists(search_root):
+                candidates = glob.glob(os.path.join(search_root, '**', f'{trialName}.mot'), recursive=True)
+                if not candidates:
+                    candidates = glob.glob(os.path.join(search_root, '**', '*.mot'), recursive=True)
+            if not candidates:
+                # fallback: search entire sessionDir
+                candidates = glob.glob(os.path.join(sessionDir, '**', f'{trialName}.mot'), recursive=True)
+                if not candidates:
+                    candidates = glob.glob(os.path.join(sessionDir, '**', '*.mot'), recursive=True)
+            if candidates:
+                motionPath = candidates[0]
+            else:
+                raise Exception('Motion file: ' + os.path.join('OpenSimData','Kinematics', trialName + '.mot') + ' does not exist. Searched under: ' + sessionDir)
+
         # Create time-series table with coordinate values.             
         self.table = opensim.TimeSeriesTable(motionPath)        
         tableProcessor = opensim.TableProcessor(self.table)
