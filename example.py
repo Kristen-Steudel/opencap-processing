@@ -19,22 +19,93 @@
 '''
 
 import os
+import glob
 import utilsKinematics
-from utils import download_kinematics
+from utils import download_kinematics, get_model_name_from_metadata
 from utilsPlotting import plot_dataframe
 
 # %% User inputs.
 # Specify session id; see end of url in app.opencap.ai/session/<session_id>.
-session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
+#session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
+session_id = os.path.normpath('G:\\Shared drives\\Stanford Football Prototyping\\December_12\\subject3\\OpenSimData\\OpenPose_default\\3-cameras')
+
 
 # Specify trial names in a list; use None to process all trials in a session.
-specific_trial_names = ['jump']
+specific_trial_names = ['ACEEL_LSTM', 'DECEL_LSTM']
 
 # Specify where to download the data.
-data_folder = os.path.join("./Data", session_id)
+data_folder = os.path.join(session_id)
 
-# %% Download data.
-trial_names, modelName = download_kinematics(session_id, folder=data_folder, trialNames=specific_trial_names)
+# %% Prepare data (local or remote).
+if os.path.exists(session_id):
+    # Running locally — discover session root, trials and model from local folder structure.
+    def find_session_root(path):
+        path = os.path.abspath(path)
+        while True:
+            # Check for obvious session markers or OpenSimData folder
+            if os.path.exists(os.path.join(path, 'sessionMetadata.yaml')):
+                return path
+            opensimdata = os.path.join(path, 'OpenSimData')
+            markerdata = os.path.join(path, 'MarkerData')
+            if os.path.exists(opensimdata) or os.path.exists(markerdata):
+                return path
+            parent = os.path.dirname(path)
+            if parent == path:
+                return None
+            path = parent
+
+    # If the user supplied a path that already contains an 'OpenSimData'
+    # segment (for example: ...\subject3\OpenSimData\OpenPose_default\3-cameras)
+    # then set the session root to the parent directory that contains
+    # `OpenSimData` so that later code doesn't append `OpenSimData` twice.
+    norm_path = os.path.normpath(session_id)
+    parts = norm_path.split(os.path.sep)
+    lower_parts = [p.lower() for p in parts]
+    if 'opensimdata' in lower_parts:
+        idx = lower_parts.index('opensimdata')
+        # join parts up to (but not including) the OpenSimData segment
+        if idx > 0:
+            session_root = os.path.sep.join(parts[:idx])
+        else:
+            session_root = os.path.sep.join(parts[:1])
+        session_root = session_root.rstrip(os.path.sep)
+    else:
+        session_root = find_session_root(session_id)
+        if session_root is None:
+            raise FileNotFoundError(f"Could not find session root for path: {session_id}")
+
+    # Use session_root as the session directory passed to utilsKinematics
+    data_folder = session_root
+
+    # Search for .mot files under likely kinematics folders
+    mot_files = sorted(glob.glob(os.path.join(session_root, 'OpenSimData', 'Kinematics', '*.mot')))
+    if not mot_files:
+        # fallback: search recursively for any .mot under the session root
+        mot_files = sorted(glob.glob(os.path.join(session_root, '**', '*.mot'), recursive=True))
+
+    if len(mot_files) == 0:
+        raise FileNotFoundError(f"No .mot files found under session root: {session_root}")
+
+    trial_names = [os.path.splitext(os.path.basename(m))[0] for m in mot_files]
+    if specific_trial_names is not None:
+        trial_names = [t for t in trial_names if t in specific_trial_names]
+
+    # Find model (.osim) under OpenSimData/Model or anywhere under session
+    model_files = sorted(glob.glob(os.path.join(session_root, 'OpenSimData', 'Model', '*.osim')))
+    if not model_files:
+        model_files = sorted(glob.glob(os.path.join(session_root, '**', '*.osim'), recursive=True))
+
+    if model_files:
+        modelName = os.path.splitext(os.path.basename(model_files[0]))[0]
+    else:
+        # try to read from metadata
+        try:
+            modelName = get_model_name_from_metadata(session_root).replace('.osim', '')
+        except Exception:
+            modelName = None
+else:
+    # Fallback: download from cloud as before
+    trial_names, modelName = download_kinematics(session_id, folder=data_folder, trialNames=specific_trial_names)
 
 # %% Process data.
 kinematics, coordinates, muscle_tendon_lengths, moment_arms, center_of_mass = {}, {}, {}, {}, {}
@@ -61,7 +132,7 @@ for trial_name in trial_names:
     
     
 # %% Print as csv: example.
-output_csv_dir = os.path.join(data_folder, 'OpenSimData', 'Kinematics', 'Outputs')
+output_csv_dir = os.path.join(data_folder, 'Kinematics', 'Outputs')
 os.makedirs(output_csv_dir, exist_ok=True)
 output_csv_path = os.path.join(output_csv_dir, 'coordinate_speeds_{}.csv'.format(trial_names[0]))
 coordinates['speeds'][trial_names[0]].to_csv(output_csv_path)
