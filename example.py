@@ -27,11 +27,11 @@ from utilsPlotting import plot_dataframe
 # %% User inputs.
 # Specify session id; see end of url in app.opencap.ai/session/<session_id>.
 #session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
-session_id = os.path.normpath('G:\\Shared drives\\Stanford Football Prototyping\\December_12\\subject3\\OpenSimData\\OpenPose_default\\3-cameras')
+session_id = os.path.normpath('G:\\Shared drives\\Stanford Football\\January_19\\subject2\\OpenSimData\\OpenPose_default\\2-cameras')
 
 
 # Specify trial names in a list; use None to process all trials in a session.
-specific_trial_names = ['ACCEL_LSTM','DECEL_LSTM']
+specific_trial_names = ['ID2_S2_fly_LSTM'] #'ACCEL_LSTM', 'DECEL_LSTM']
 
 # Specify where to download the data.
 data_folder = os.path.join(session_id)
@@ -111,6 +111,7 @@ else:
 kinematics, coordinates, muscle_tendon_lengths, moment_arms, center_of_mass = {}, {}, {}, {}, {}
 coordinates['values'], coordinates['speeds'], coordinates['accelerations'] = {}, {}, {}
 center_of_mass['values'], center_of_mass['speeds'], center_of_mass['accelerations'] = {}, {}, {}
+angular_velocity = {}
 
 for trial_name in trial_names:
     # Create object from class kinematics.
@@ -130,12 +131,25 @@ for trial_name in trial_names:
     center_of_mass['speeds'][trial_name] = kinematics[trial_name].get_center_of_mass_speeds(lowpass_cutoff_frequency=10)
     center_of_mass['accelerations'][trial_name] = kinematics[trial_name].get_center_of_mass_accelerations(lowpass_cutoff_frequency=10)
     
+        # Get shank angular velocity (expressed in body frame, with 10 Hz lowpass filter)
+    # Specify both left and right shanks
+    angular_velocity[trial_name] = kinematics[trial_name].get_body_angular_velocity(
+        body_names=['tibia_l', 'tibia_r'],  # Both shanks
+        lowpass_cutoff_frequency=2, #  2 Hz cutoff frequency for angular velocity for detecting steps
+        expressed_in='body'  # Options: 'body' or 'ground'
+    )
     
 # %% Print as csv: example.
 output_csv_dir = os.path.join(data_folder, 'Kinematics', 'Outputs')
 os.makedirs(output_csv_dir, exist_ok=True)
 output_csv_path = os.path.join(output_csv_dir, 'coordinate_speeds_{}.csv'.format(trial_names[0]))
 coordinates['speeds'][trial_names[0]].to_csv(output_csv_path)
+
+# %% Print as csv: center_of_mass_speeds
+output_csv_dir = os.path.join(data_folder, 'Kinematics', 'Outputs')
+os.makedirs(output_csv_dir, exist_ok=True)
+output_csv_path = os.path.join(output_csv_dir, 'shank_angular_velocity_{}.csv'.format(trial_names[0]))
+angular_velocity[trial_names[0]].to_csv(output_csv_path)
 
 # %% Print as csv: example.
 output_csv_dir = os.path.join(data_folder, 'Kinematics', 'Outputs')
@@ -149,7 +163,8 @@ plot_dataframe(dataframes = [coordinates['values'][trial_names[0]]],
                xlabel = 'Time (s)',
                ylabel = 'Pos (m or deg)',
                title = 'Coordinate values',
-               labels = [trial_names[0]])
+               labels = [trial_names[0]],
+               save_path = os.path.join(output_csv_dir, 'coordinate_values_{}.png'.format(trial_names[0])))
 
 # Plot selected coordinate speeds against time.
 plot_dataframe(dataframes = [coordinates['speeds'][trial_names[0]]],
@@ -157,7 +172,8 @@ plot_dataframe(dataframes = [coordinates['speeds'][trial_names[0]]],
                xlabel = 'Time (s)',
                ylabel = 'Vel (deg/s)',
                title = 'Coordinate speeds',
-               labels = [trial_names[0]])
+               labels = [trial_names[0]],
+               save_path = os.path.join(output_csv_dir, 'coordinate_speeds_{}.png'.format(trial_names[0])))
 
 # Plot knee flexion accelerations against hip flexion accelerations.
 plot_dataframe(dataframes = [coordinates['accelerations'][trial_names[0]]],
@@ -165,17 +181,20 @@ plot_dataframe(dataframes = [coordinates['accelerations'][trial_names[0]]],
                y = ['hip_flexion_l'],
                xlabel = 'Knee angle acceleration (deg/s^2)',
                ylabel = 'Hip flexion acceleration (deg/s^2)',
-               labels = [trial_names[0]])
+               labels = [trial_names[0]],
+               save_path = os.path.join(output_csv_dir, 'coordinate_accelerations_{}.png'.format(trial_names[0])))
 
 # Plot center of mass accelerations.
 plot_dataframe(dataframes = [center_of_mass['accelerations'][trial_names[0]]],
                xlabel = 'Time (s)',
                title = 'Center of mass accelerations',
-               labels = [trial_names[0]])
+               labels = [trial_names[0]],
+               save_path = os.path.join(output_csv_dir, 'center_of_mass_accelerations_{}.png'.format(trial_names[0])))
 
 # Plot muscle-tendon lengths against time.
 plot_dataframe(dataframes = [muscle_tendon_lengths[trial_names[0]]],
                y = ['bflh_r', 'gasmed_r', 'recfem_r'],
                xlabel = 'Time (s)',
                title = 'Muscle-tendon lengths',
-               labels = [trial_names[0]])
+               labels = [trial_names[0]],
+               save_path = os.path.join(output_csv_dir, 'muscle_tendon_lengths_{}.png'.format(trial_names[0])))

@@ -22,7 +22,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def plot_dataframe(dataframes, x=None, y=[], xlabel=None, ylabel=None, 
-                   labels=None, title=None, xrange=None):
+                   labels=None, title=None, xrange=None, save_path=None):
     
     # Handle case specific number of subplots.
     if not x and not y:
@@ -110,6 +110,15 @@ def plot_dataframe(dataframes, x=None, y=[], xlabel=None, ylabel=None,
                    
     # Tight layout (should make figure big enough first).
     # fig.tight_layout()
+        # >>>>> NEW SECTION TO SAVE THE FIGURE <<<<<
+    if save_path:
+        try:
+            # Save the figure. dpi=300 is good for high-quality images.
+            # bbox_inches='tight' removes excess white space.
+            fig.savefig(save_path, dpi=300, bbox_inches='tight')
+            print(f"Figure saved to {save_path}")
+        except Exception as e:
+            print(f"Error saving figure: {e}")
     
     # Show plot (needed if running through terminal).
     plt.show()
