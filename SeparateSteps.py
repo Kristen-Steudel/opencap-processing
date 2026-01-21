@@ -33,7 +33,7 @@ def find_negative_zero_crossings(time, signal_data):
     
     for i in range(len(signal_data) - 1):
         # Check if crossing from positive to negative (negative-going)
-        if signal_data[i] < 0 and signal_data[i + 1] >= 0:
+        if signal_data[i] > 0 and signal_data[i + 1] <= 0:
             # Linear interpolation to find exact crossing time
             # y = y0 + (y1 - y0) * (x - x0) / (x1 - x0)
             # Solve for x when y = 0
