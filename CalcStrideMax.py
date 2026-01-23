@@ -68,6 +68,17 @@ right_bflh_r_max_lengths.append(max_length_r)
 max_velocity_r = right_mtu_lengths_df['bflh_r_vel'].max()
 right_bflh_r_max_velocities.append(max_velocity_r)
 
+# save the max values to a new csv
+output_df = pd.DataFrame({
+    'left_bflh_max_length': left_bflh_l_max_lengths,
+    'left_bflh_max_velocity': left_bflh_l_max_velocities,
+    'right_bflh_max_length': right_bflh_r_max_lengths,
+    'right_bflh_max_velocity': right_bflh_r_max_velocities
+})
+output_file = r'G:\Shared drives\Stanford Football\January_19\subject2\Kinematics\Outputs\bflh_mtu_max_lengths_velocities_ID2_S2_fly_LSTM.csv'
+output_df.to_csv(output_file, index=False)
+print(f"Saved BFLH max lengths and velocities to {output_file}")
+
 # Create a plot of the bflh lengths and velocities for left and right sides
 plt.figure(figsize=(12, 6))
 plt.subplot(2, 2, 1)
