@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.signal import spectrogram
 
 # %% Load data
 data_folder = r'G:\Shared drives\Stanford Football\January_19\subject2\Kinematics\Outputs\shank_angular_velocity_ID2_S2_fly_LSTM.csv'
@@ -148,3 +149,16 @@ if len(stride_times_df) > 1:
     print(f"\nMean stride interval: {np.mean(stride_intervals):.3f} s")
     print(f"Std stride interval:  {np.std(stride_intervals):.3f} s")
 print("="*60)
+
+fs = 120
+x =  df['tibia_l_z']
+t_x = df['time']
+
+N = len(x)
+
+f, t, Sxx = spectrogram(x, fs, nperseg = 32)
+plt.pcolormesh(t, f, Sxx, shading='gouraud')
+plt.ylabel('Frequency [Hz]')
+plt.ylim([0, 10])
+plt.xlabel('Time [sec]')
+plt.show()
