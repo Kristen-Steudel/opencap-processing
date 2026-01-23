@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.signal import spectrogram
 
 # %% Load data
-data_folder = r'G:\Shared drives\Stanford Football\January_19\subject2\Kinematics\Outputs\shank_angular_velocity_ID2_S2_fly_LSTM.csv'
+data_folder = r'G:\Shared drives\Stanford Football\January_19\subject10\Kinematics\Outputs\shank_angular_velocity_ID10_S2_fly_LSTM.csv'
 
 # Load csv file as dataframe
 df = pd.read_csv(data_folder)
@@ -156,7 +156,7 @@ t_x = df['time']
 
 N = len(x)
 
-f, t, Sxx = spectrogram(x, fs, nperseg = 32)
+f, t, Sxx = spectrogram(x, fs, nperseg = 90)
 plt.pcolormesh(t, f, Sxx, shading='gouraud')
 plt.ylabel('Frequency [Hz]')
 plt.ylim([0, 10])

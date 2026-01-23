@@ -27,11 +27,11 @@ from utilsPlotting import plot_dataframe
 # %% User inputs.
 # Specify session id; see end of url in app.opencap.ai/session/<session_id>.
 #session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
-session_id = os.path.normpath('G:\\Shared drives\\Stanford Football\\January_19\\subject2\\OpenSimData\\OpenPose_default\\3-cameras')
+session_id = os.path.normpath('G:\\Shared drives\\Stanford Football\\January_19\\subject10\\OpenSimData\\OpenPose_default\\3-cameras')
 
 
 # Specify trial names in a list; use None to process all trials in a session.
-specific_trial_names = ['ID2_S2_fly_LSTM'] #'ACCEL_LSTM', 'DECEL_LSTM']
+specific_trial_names = ['ID10_S2_fly_LSTM'] #'ACCEL_LSTM', 'DECEL_LSTM']
 
 # Specify where to download the data.
 data_folder = os.path.join(session_id)
