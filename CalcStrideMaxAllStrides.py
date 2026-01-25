@@ -4,14 +4,14 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
 
 import utilsKinematics
 
-subject = 2
+subject = 13
 session = "S2"
 base_path = rf'G:\Shared drives\Stanford Football\January_19\subject{subject}\Kinematics\Outputs'
 
-# load stride times csv
 # Load stride times csv
 left_stride_times_file = rf'{base_path}\stride_times_left.csv'
 left_stride_times_df = pd.read_csv(left_stride_times_file)
@@ -63,7 +63,7 @@ for i in range(0, len(left_stride_times_df) - 1):
         left_stride_end_times.append(touchdown_time)
 
 # Process RIGHT strides
-for i in range(0, len(right_stride_times_df) - 1, 2):
+for i in range(0, len(right_stride_times_df) - 1):
     takeoff_time = right_stride_times_df['time'].iloc[i]
     touchdown_time = right_stride_times_df['time'].iloc[i + 1]
     
@@ -168,6 +168,11 @@ left_colors = cm.rainbow(np.linspace(0, 1, n_left_strides))
 right_colors = cm.rainbow(np.linspace(0, 1, n_right_strides))
 
 # Plot LEFT BFLH LENGTHS
+
+# Define normalized x-axis (0 to 100%)
+normalized_x = np.linspace(0, 100, 101)
+
+# Plot LEFT BFLH LENGTHS
 for idx, (start_time, end_time) in enumerate(zip(left_stride_start_times, left_stride_end_times)):
     stride_mtu_df = mtu_lengths_df[
         (mtu_lengths_df['time'] >= start_time) & 
@@ -175,23 +180,29 @@ for idx, (start_time, end_time) in enumerate(zip(left_stride_start_times, left_s
     ].reset_index(drop=True)
     
     if len(stride_mtu_df) > 0:
-        # Normalize time to start at 0 for each stride
-        normalized_time = stride_mtu_df['time'] - stride_mtu_df['time'].iloc[0]
+        # Create interpolation function
+        stride_percent = np.linspace(0, 100, len(stride_mtu_df))
+        interp_func = interp1d(stride_percent, stride_mtu_df['bflh_l'], 
+                              kind='linear', fill_value='extrapolate')
+        
+        # Interpolate to normalized grid
+        normalized_length = interp_func(normalized_x)
         
         # Plot the stride
-        axes[0, 0].plot(normalized_time, stride_mtu_df['bflh_l'], 
+        axes[0, 0].plot(normalized_x, normalized_length, 
                        color=left_colors[idx], label=f'Stride {idx+1}', linewidth=2)
         
         # Mark the peak
-        max_idx = stride_mtu_df['bflh_l'].idxmax()
-        axes[0, 0].plot(normalized_time.iloc[max_idx], stride_mtu_df['bflh_l'].iloc[max_idx], 
+        max_idx = np.argmax(normalized_length)
+        axes[0, 0].plot(normalized_x[max_idx], normalized_length[max_idx], 
                        'o', color=left_colors[idx], markersize=8, markeredgecolor='black', markeredgewidth=1.5)
 
-axes[0, 0].set_xlabel('Time (s)', fontsize=12)
+axes[0, 0].set_xlabel('Stride Cycle (%)', fontsize=12)
 axes[0, 0].set_ylabel('MTU Length (m)', fontsize=12)
 axes[0, 0].set_title('Left BFLH Lengths - All Strides Overlaid', fontsize=14, fontweight='bold')
 axes[0, 0].legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
 axes[0, 0].grid(True, alpha=0.3)
+axes[0, 0].set_xlim([0, 100])
 
 # Plot RIGHT BFLH LENGTHS
 for idx, (start_time, end_time) in enumerate(zip(right_stride_start_times, right_stride_end_times)):
@@ -201,23 +212,29 @@ for idx, (start_time, end_time) in enumerate(zip(right_stride_start_times, right
     ].reset_index(drop=True)
     
     if len(stride_mtu_df) > 0:
-        # Normalize time to start at 0 for each stride
-        normalized_time = stride_mtu_df['time'] - stride_mtu_df['time'].iloc[0]
+        # Create interpolation function
+        stride_percent = np.linspace(0, 100, len(stride_mtu_df))
+        interp_func = interp1d(stride_percent, stride_mtu_df['bflh_r'], 
+                              kind='linear', fill_value='extrapolate')
+        
+        # Interpolate to normalized grid
+        normalized_length = interp_func(normalized_x)
         
         # Plot the stride
-        axes[0, 1].plot(normalized_time, stride_mtu_df['bflh_r'], 
+        axes[0, 1].plot(normalized_x, normalized_length, 
                        color=right_colors[idx], label=f'Stride {idx+1}', linewidth=2)
         
         # Mark the peak
-        max_idx = stride_mtu_df['bflh_r'].idxmax()
-        axes[0, 1].plot(normalized_time.iloc[max_idx], stride_mtu_df['bflh_r'].iloc[max_idx], 
+        max_idx = np.argmax(normalized_length)
+        axes[0, 1].plot(normalized_x[max_idx], normalized_length[max_idx], 
                        'o', color=right_colors[idx], markersize=8, markeredgecolor='black', markeredgewidth=1.5)
 
-axes[0, 1].set_xlabel('Time (s)', fontsize=12)
+axes[0, 1].set_xlabel('Stride Cycle (%)', fontsize=12)
 axes[0, 1].set_ylabel('MTU Length (m)', fontsize=12)
 axes[0, 1].set_title('Right BFLH Lengths - All Strides Overlaid', fontsize=14, fontweight='bold')
 axes[0, 1].legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
 axes[0, 1].grid(True, alpha=0.3)
+axes[0, 1].set_xlim([0, 100])
 
 # Plot LEFT BFLH VELOCITIES
 for idx, (start_time, end_time) in enumerate(zip(left_stride_start_times, left_stride_end_times)):
@@ -230,23 +247,30 @@ for idx, (start_time, end_time) in enumerate(zip(left_stride_start_times, left_s
         # Calculate velocity
         stride_mtu_df['bflh_l_vel'] = np.gradient(stride_mtu_df['bflh_l'], stride_mtu_df['time'])
         
-        # Normalize time to start at 0 for each stride
-        normalized_time = stride_mtu_df['time'] - stride_mtu_df['time'].iloc[0]
+        # Create interpolation function
+        stride_percent = np.linspace(0, 100, len(stride_mtu_df))
+        interp_func = interp1d(stride_percent, stride_mtu_df['bflh_l_vel'], 
+                              kind='linear', fill_value='extrapolate')
+        
+        # Interpolate to normalized grid
+        normalized_velocity = interp_func(normalized_x)
         
         # Plot the stride
-        axes[1, 0].plot(normalized_time, stride_mtu_df['bflh_l_vel'], 
+        axes[1, 0].plot(normalized_x, normalized_velocity, 
                        color=left_colors[idx], label=f'Stride {idx+1}', linewidth=2)
         
         # Mark the peak
-        max_idx = stride_mtu_df['bflh_l_vel'].idxmax()
-        axes[1, 0].plot(normalized_time.iloc[max_idx], stride_mtu_df['bflh_l_vel'].iloc[max_idx], 
+        max_idx = np.argmax(normalized_velocity)
+        axes[1, 0].plot(normalized_x[max_idx], normalized_velocity[max_idx], 
                        'o', color=left_colors[idx], markersize=8, markeredgecolor='black', markeredgewidth=1.5)
 
-axes[1, 0].set_xlabel('Time (s)', fontsize=12)
+axes[1, 0].set_xlabel('Stride Cycle (%)', fontsize=12)
 axes[1, 0].set_ylabel('MTU Velocity (m/s)', fontsize=12)
 axes[1, 0].set_title('Left BFLH Velocities - All Strides Overlaid', fontsize=14, fontweight='bold')
 axes[1, 0].legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
 axes[1, 0].grid(True, alpha=0.3)
+axes[1, 0].set_xlim([0, 100])
+
 
 # Plot RIGHT BFLH VELOCITIES
 for idx, (start_time, end_time) in enumerate(zip(right_stride_start_times, right_stride_end_times)):
@@ -259,23 +283,29 @@ for idx, (start_time, end_time) in enumerate(zip(right_stride_start_times, right
         # Calculate velocity
         stride_mtu_df['bflh_r_vel'] = np.gradient(stride_mtu_df['bflh_r'], stride_mtu_df['time'])
         
-        # Normalize time to start at 0 for each stride
-        normalized_time = stride_mtu_df['time'] - stride_mtu_df['time'].iloc[0]
+        # Create interpolation function
+        stride_percent = np.linspace(0, 100, len(stride_mtu_df))
+        interp_func = interp1d(stride_percent, stride_mtu_df['bflh_r_vel'], 
+                              kind='linear', fill_value='extrapolate')
+        
+        # Interpolate to normalized grid
+        normalized_velocity = interp_func(normalized_x)
         
         # Plot the stride
-        axes[1, 1].plot(normalized_time, stride_mtu_df['bflh_r_vel'], 
+        axes[1, 1].plot(normalized_x, normalized_velocity, 
                        color=right_colors[idx], label=f'Stride {idx+1}', linewidth=2)
         
         # Mark the peak
-        max_idx = stride_mtu_df['bflh_r_vel'].idxmax()
-        axes[1, 1].plot(normalized_time.iloc[max_idx], stride_mtu_df['bflh_r_vel'].iloc[max_idx], 
+        max_idx = np.argmax(normalized_velocity)
+        axes[1, 1].plot(normalized_x[max_idx], normalized_velocity[max_idx], 
                        'o', color=right_colors[idx], markersize=8, markeredgecolor='black', markeredgewidth=1.5)
 
-axes[1, 1].set_xlabel('Time (s)', fontsize=12)
+axes[1, 1].set_xlabel('Stride Cycle (%)', fontsize=12)
 axes[1, 1].set_ylabel('MTU Velocity (m/s)', fontsize=12)
 axes[1, 1].set_title('Right BFLH Velocities - All Strides Overlaid', fontsize=14, fontweight='bold')
 axes[1, 1].legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
 axes[1, 1].grid(True, alpha=0.3)
+axes[1, 1].set_xlim([0, 100])
 
 plt.tight_layout()
 plt.savefig(rf'G:\Shared drives\Stanford Football\January_19\subject10\Kinematics\Outputs\bflh_mtu_all_strides_overlay_ID{subject}_{session}_fly_LSTM.png', 

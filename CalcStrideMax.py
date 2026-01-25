@@ -7,10 +7,12 @@ import matplotlib.pyplot as plt
 
 import utilsKinematics
 
+subject_num = 13
+
 # load stride times csv
-left_stride_times_file = r'G:\Shared drives\Stanford Football\January_19\subject2\Kinematics\Outputs\stride_times_left.csv'
+left_stride_times_file = rf'G:\Shared drives\Stanford Football\January_19\subject{subject_num}\Kinematics\Outputs\stride_times_left.csv'
 left_stride_times_df = pd.read_csv(left_stride_times_file)
-right_stride_times_file = r'G:\Shared drives\Stanford Football\January_19\subject2\Kinematics\Outputs\stride_times_right.csv'
+right_stride_times_file = rf'G:\Shared drives\Stanford Football\January_19\subject{subject_num}\Kinematics\Outputs\stride_times_right.csv'
 right_stride_times_df = pd.read_csv(right_stride_times_file)
 last_left_stride_touchdown = left_stride_times_df['time'].iloc[-1]
 takeoff_last_left_stride = left_stride_times_df['time'].iloc[-2]
@@ -19,7 +21,7 @@ takeoff_last_right_stride = right_stride_times_df['time'].iloc[-2]
 
 
 # load muscle-tendon unit lengths and velocities from csv in subject folder > Kinematics > Outputs
-mtu_lengths_file = r'G:\Shared drives\Stanford Football\January_19\subject2\Kinematics\Outputs\muscle_tendon_lengths_ID2_S2_fly_LSTM.csv'
+mtu_lengths_file = rf'G:\Shared drives\Stanford Football\January_19\subject{subject_num}\Kinematics\Outputs\muscle_tendon_lengths_ID{subject_num}_S2_fly_LSTM.csv'
 mtu_lengths_df = pd.read_csv(mtu_lengths_file)
 
 # shorten the csv times to only the stride times
@@ -75,7 +77,7 @@ output_df = pd.DataFrame({
     'right_bflh_max_length': right_bflh_r_max_lengths,
     'right_bflh_max_velocity': right_bflh_r_max_velocities
 })
-output_file = r'G:\Shared drives\Stanford Football\January_19\subject2\Kinematics\Outputs\bflh_mtu_max_lengths_velocities_ID2_S2_fly_LSTM.csv'
+output_file = rf'G:\Shared drives\Stanford Football\January_19\subject{subject_num}\Kinematics\Outputs\bflh_mtu_max_lengths_velocities_ID{subject_num}_S2_fly_LSTM.csv'
 output_df.to_csv(output_file, index=False)
 print(f"Saved BFLH max lengths and velocities to {output_file}")
 
@@ -108,4 +110,4 @@ plt.ylabel('Muscle-Tendon Unit Velocity (m/s)')
 plt.legend()
 plt.tight_layout()
 plt.show()
-plt.savefig(r'G:\Shared drives\Stanford Football\January_19\subject2\Kinematics\Outputs\bflh_mtu_lengths_velocities_ID2_S2_fly_LSTM.png')
+plt.savefig(rf'G:\Shared drives\Stanford Football\January_19\subject{subject_num}\Kinematics\Outputs\bflh_mtu_lengths_velocities_ID{subject_num}_S2_fly_LSTM.png')
