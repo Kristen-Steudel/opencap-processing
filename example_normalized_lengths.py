@@ -23,8 +23,10 @@ import glob
 import utilsKinematics
 from utils import download_kinematics, get_model_name_from_metadata
 from utilsPlotting import plot_dataframe
+import opensim as osim
 
-subject_num = 1
+
+subject_num = 9
 # %% User inputs.
 # Specify session id; see end of url in app.opencap.ai/session/<session_id>.
 #session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
@@ -97,16 +99,53 @@ if os.path.exists(session_id):
         model_files = sorted(glob.glob(os.path.join(session_root, '**', '*.osim'), recursive=True))
 
     if model_files:
-        modelName = os.path.splitext(os.path.basename(model_files[0]))[0]
+        # Prefer _scaled models over generic ones
+        scaled_models = [m for m in model_files if '_scaled' in m]
+        if scaled_models:
+            modelName = os.path.splitext(os.path.basename(scaled_models[0]))[0]
+            model_path = scaled_models[0]
+        else:
+            modelName = os.path.splitext(os.path.basename(model_files[0]))[0]
+            model_path = model_files[0]
     else:
         # try to read from metadata
         try:
             modelName = get_model_name_from_metadata(session_root).replace('.osim', '')
+            model_path = os.path.join(session_root, 'OpenSimData', 'Model', modelName + '.osim')
         except Exception:
             modelName = None
-else:
+            model_path = None
+else:   
     # Fallback: download from cloud as before
     trial_names, modelName = download_kinematics(session_id, folder=data_folder, trialNames=specific_trial_names)
+    model_path = os.path.join(data_folder, 'OpenSimData', 'Model', modelName + '.osim')
+
+# Get the neutral MTU lengths from the model for normalization
+def get_neutral_mtu_lengths(model_path):
+    """
+    Get the neutral (resting) muscle-tendon unit lengths from an OpenSim model.
+    This is calculated as optimal_fiber_length + tendon_slack_length.
+    
+    Parameters
+    ----------
+    model_path : str
+        Path to the OpenSim model file (.osim)
+    
+    Returns
+    -------
+    dict
+        Dictionary with muscle names as keys and neutral MTU lengths as values
+    """
+    model = osim.Model(model_path)
+    state = model.initSystem()
+    neutral_mtu_lengths = {}
+    muscles = model.getMuscles()
+    for i in range(muscles.getSize()):
+        muscle = muscles.get(i)
+        neutral_mtu_lengths[muscle.getName()] = muscle.getOptimalFiberLength() + muscle.getTendonSlackLength()
+    return neutral_mtu_lengths
+
+neutral_mtu_lengths = get_neutral_mtu_lengths(model_path)
 
 # %% Process data.
 kinematics, coordinates, muscle_tendon_lengths, moment_arms, center_of_mass = {}, {}, {}, {}, {}
@@ -117,7 +156,7 @@ angular_velocity = {}
 for trial_name in trial_names:
     # Create object from class kinematics.
     kinematics[trial_name] = utilsKinematics.kinematics(data_folder, trial_name, modelName=modelName, lowpass_cutoff_frequency_for_coordinate_values=10)
-    
+
     # Get coordinate values, speeds, and accelerations.
     coordinates['values'][trial_name] = kinematics[trial_name].get_coordinate_values(in_degrees=True) # already filtered
     coordinates['speeds'][trial_name] = kinematics[trial_name].get_coordinate_speeds(in_degrees=True, lowpass_cutoff_frequency=10)
@@ -126,37 +165,67 @@ for trial_name in trial_names:
     # Get muscle-tendon lengths and moment arms.
     muscle_tendon_lengths[trial_name] = kinematics[trial_name].get_muscle_tendon_lengths()
     # moment_arms[trial_name] = kinematics[trial_name].get_moment_arms()
-    
+
     # Get center of mass values, speeds, and accelerations.
     center_of_mass['values'][trial_name] = kinematics[trial_name].get_center_of_mass_values(lowpass_cutoff_frequency=10)
     center_of_mass['speeds'][trial_name] = kinematics[trial_name].get_center_of_mass_speeds(lowpass_cutoff_frequency=10)
     center_of_mass['accelerations'][trial_name] = kinematics[trial_name].get_center_of_mass_accelerations(lowpass_cutoff_frequency=10)
     
-        # Get shank angular velocity (expressed in body frame, with 10 Hz lowpass filter)
+    # Get shank angular velocity (expressed in body frame, with 10 Hz lowpass filter)
     # Specify both left and right shanks
     angular_velocity[trial_name] = kinematics[trial_name].get_body_angular_velocity(
         body_names=['tibia_l', 'tibia_r'],  # Both shanks
         lowpass_cutoff_frequency=2, #  2 Hz cutoff frequency for angular velocity for detecting steps
         expressed_in='ground'  # Options: 'body' or 'ground'
     )
+
+# %% Normalize muscle-tendon lengths
+normalized_muscle_tendon_lengths = {}
+for trial_name in trial_names:
+    # Create a normalized dataframe
+    normalized_df = muscle_tendon_lengths[trial_name].copy()
     
-# %% Print as csv: example.
+    # Normalize each muscle column by its neutral length
+    for muscle_name in normalized_df.columns:
+        if muscle_name != 'time' and muscle_name in neutral_mtu_lengths:
+            normalized_df[muscle_name] = normalized_df[muscle_name] / neutral_mtu_lengths[muscle_name]
+    
+    normalized_muscle_tendon_lengths[trial_name] = normalized_df
+
+
+
+# %% Print neutral lengths for biceps femoris long head
+print("\nNeutral MTU Lengths for Biceps Femoris Long Head:")
+for muscle_name, length in neutral_mtu_lengths.items():
+    if 'bflh' in muscle_name.lower():
+        print(f"{muscle_name}: {length:.4f} m")
+
+# %% Save outputs
 output_csv_dir = os.path.join(data_folder, 'Kinematics', 'Outputs')
 os.makedirs(output_csv_dir, exist_ok=True)
+
+# Save coordinate speeds
 output_csv_path = os.path.join(output_csv_dir, 'coordinate_speeds_{}.csv'.format(trial_names[0]))
 coordinates['speeds'][trial_names[0]].to_csv(output_csv_path)
 
-# %% Print as csv: center_of_mass_speeds
-output_csv_dir = os.path.join(data_folder, 'Kinematics', 'Outputs')
-os.makedirs(output_csv_dir, exist_ok=True)
+# Save shank angular velocity
 output_csv_path = os.path.join(output_csv_dir, 'shank_angular_velocity_{}.csv'.format(trial_names[0]))
 angular_velocity[trial_names[0]].to_csv(output_csv_path)
 
-# %% Print as csv: example.
-output_csv_dir = os.path.join(data_folder, 'Kinematics', 'Outputs')
-os.makedirs(output_csv_dir, exist_ok=True)
+# Save muscle-tendon lengths (original)
 output_csv_path = os.path.join(output_csv_dir, 'muscle_tendon_lengths_{}.csv'.format(trial_names[0]))
 muscle_tendon_lengths[trial_names[0]].to_csv(output_csv_path)
+
+# Save normalized muscle-tendon lengths (all muscles)
+output_csv_path = os.path.join(output_csv_dir, 'normalized_muscle_tendon_lengths_{}.csv'.format(trial_names[0]))
+normalized_muscle_tendon_lengths[trial_names[0]].to_csv(output_csv_path)
+
+# Save normalized biceps femoris long head length only
+output_csv_path_bflh = os.path.join(output_csv_dir, 'normalized_bflh_length_{}.csv'.format(trial_names[0]))
+bflh_columns = [col for col in normalized_muscle_tendon_lengths[trial_names[0]].columns if 'bflh' in col.lower()]
+columns_to_save = ['time'] + bflh_columns
+normalized_muscle_tendon_lengths[trial_names[0]][columns_to_save].to_csv(output_csv_path_bflh)
+
 
 # %% Plot: examples.
 # Plot all coordinate values against time.
@@ -192,10 +261,20 @@ plot_dataframe(dataframes = [center_of_mass['accelerations'][trial_names[0]]],
                labels = [trial_names[0]],
                save_path = os.path.join(output_csv_dir, 'center_of_mass_accelerations_{}.png'.format(trial_names[0])))
 
-# Plot muscle-tendon lengths against time.
+# Plot muscle-tendon lengths against time (original).
 plot_dataframe(dataframes = [muscle_tendon_lengths[trial_names[0]]],
                y = ['bflh_r', 'gasmed_r', 'recfem_r'],
                xlabel = 'Time (s)',
+               ylabel = 'Length (m)',
                title = 'Muscle-tendon lengths',
                labels = [trial_names[0]],
                save_path = os.path.join(output_csv_dir, 'muscle_tendon_lengths_{}.png'.format(trial_names[0])))
+
+# Plot normalized muscle-tendon lengths
+plot_dataframe(dataframes = [normalized_muscle_tendon_lengths[trial_names[0]]],
+               y = ['bflh_r', 'gasmed_r', 'recfem_r'],
+               xlabel = 'Time (s)',
+               ylabel = 'Normalized Length',
+               title = 'Normalized Muscle-tendon lengths',
+               labels = [trial_names[0]],
+               save_path = os.path.join(output_csv_dir, 'normalized_muscle_tendon_lengths_{}.png'.format(trial_names[0])))

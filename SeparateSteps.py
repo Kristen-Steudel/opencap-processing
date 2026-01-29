@@ -4,9 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import spectrogram
 
-subject_num = 13
+subject_num = 9
 # %% Load data
-data_folder = rf'G:\Shared drives\Stanford Football\January_19\subject{subject_num}\Kinematics\Outputs\shank_angular_velocity_ID{subject_num}_S2_fly_LSTM.csv'
+data_folder = rf'G:\Shared drives\Stanford Football\January_26\subject{subject_num}\Kinematics\Outputs\shank_angular_velocity_ID{subject_num}_S3_fly_LSTM.csv'
 
 # Load csv file as dataframe
 df = pd.read_csv(data_folder)

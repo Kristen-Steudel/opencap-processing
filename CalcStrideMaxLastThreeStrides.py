@@ -8,7 +8,7 @@ from scipy.interpolate import interp1d
 
 import utilsKinematics
 
-subject = 6
+subject = 9
 session = "S3"
 base_path = rf'G:\Shared drives\Stanford Football\January_26\subject{subject}\Kinematics\Outputs'
 
@@ -162,23 +162,38 @@ plt.show()
 
 print("\nPlot saved successfully!")
 
-# Create overlay plots for all strides with peak markers
+# ========== MODIFIED SECTION: Plot only last 3 strides ==========
+
+# Create overlay plots for LAST 3 STRIDES ONLY with peak markers
 fig, axes = plt.subplots(2, 2, figsize=(16, 12))
 
 # Generate colors for each stride
 from matplotlib import cm
+
+# Get indices for last 3 strides
 n_left_strides = len(left_bflh_l_max_lengths)
 n_right_strides = len(right_bflh_r_max_lengths)
-left_colors = cm.rainbow(np.linspace(0, 1, n_left_strides))
-right_colors = cm.rainbow(np.linspace(0, 1, n_right_strides))
 
-# Plot LEFT BFLH LENGTHS
+# Determine how many strides to plot (up to 3)
+n_left_to_plot = min(3, n_left_strides)
+n_right_to_plot = min(3, n_right_strides)
+
+# Get indices of last 3 strides
+left_stride_indices = list(range(n_left_strides - n_left_to_plot, n_left_strides))
+right_stride_indices = list(range(n_right_strides - n_right_to_plot, n_right_strides))
+
+# Generate colors for the strides we're plotting
+left_colors = cm.rainbow(np.linspace(0, 1, n_left_to_plot))
+right_colors = cm.rainbow(np.linspace(0, 1, n_right_to_plot))
 
 # Define normalized x-axis (0 to 100%)
 normalized_x = np.linspace(0, 100, 101)
 
-# Plot LEFT BFLH LENGTHS
-for idx, (start_time, end_time) in enumerate(zip(left_stride_start_times, left_stride_end_times)):
+# Plot LEFT BFLH LENGTHS (last 3 strides only)
+for plot_idx, stride_idx in enumerate(left_stride_indices):
+    start_time = left_stride_start_times[stride_idx]
+    end_time = left_stride_end_times[stride_idx]
+    
     stride_mtu_df = mtu_lengths_df[
         (mtu_lengths_df['time'] >= start_time) & 
         (mtu_lengths_df['time'] <= end_time)
@@ -195,22 +210,25 @@ for idx, (start_time, end_time) in enumerate(zip(left_stride_start_times, left_s
         
         # Plot the stride
         axes[0, 0].plot(normalized_x, normalized_length, 
-                       color=left_colors[idx], label=f'Stride {idx+1}', linewidth=2)
+                       color=left_colors[plot_idx], label=f'Stride {stride_idx+1}', linewidth=2)
         
         # Mark the peak
         max_idx = np.argmax(normalized_length)
         axes[0, 0].plot(normalized_x[max_idx], normalized_length[max_idx], 
-                       'o', color=left_colors[idx], markersize=8, markeredgecolor='black', markeredgewidth=1.5)
+                       'o', color=left_colors[plot_idx], markersize=8, markeredgecolor='black', markeredgewidth=1.5)
 
 axes[0, 0].set_xlabel('Stride Cycle (%)', fontsize=12)
 axes[0, 0].set_ylabel('MTU Length (Normalized Lengths)', fontsize=12)
-axes[0, 0].set_title('Left BFLH Lengths - All Strides Overlaid', fontsize=14, fontweight='bold')
-axes[0, 0].legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
+axes[0, 0].set_title('Left BFLH Lengths - Last 3 Strides Overlaid', fontsize=14, fontweight='bold')
+axes[0, 0].legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=10)
 axes[0, 0].grid(True, alpha=0.3)
 axes[0, 0].set_xlim([0, 100])
 
-# Plot RIGHT BFLH LENGTHS
-for idx, (start_time, end_time) in enumerate(zip(right_stride_start_times, right_stride_end_times)):
+# Plot RIGHT BFLH LENGTHS (last 3 strides only)
+for plot_idx, stride_idx in enumerate(right_stride_indices):
+    start_time = right_stride_start_times[stride_idx]
+    end_time = right_stride_end_times[stride_idx]
+    
     stride_mtu_df = mtu_lengths_df[
         (mtu_lengths_df['time'] >= start_time) & 
         (mtu_lengths_df['time'] <= end_time)
@@ -227,22 +245,25 @@ for idx, (start_time, end_time) in enumerate(zip(right_stride_start_times, right
         
         # Plot the stride
         axes[0, 1].plot(normalized_x, normalized_length, 
-                       color=right_colors[idx], label=f'Stride {idx+1}', linewidth=2)
+                       color=right_colors[plot_idx], label=f'Stride {stride_idx+1}', linewidth=2)
         
         # Mark the peak
         max_idx = np.argmax(normalized_length)
         axes[0, 1].plot(normalized_x[max_idx], normalized_length[max_idx], 
-                       'o', color=right_colors[idx], markersize=8, markeredgecolor='black', markeredgewidth=1.5)
+                       'o', color=right_colors[plot_idx], markersize=8, markeredgecolor='black', markeredgewidth=1.5)
 
 axes[0, 1].set_xlabel('Stride Cycle (%)', fontsize=12)
 axes[0, 1].set_ylabel('MTU Length (Normalized Lengths)', fontsize=12)
-axes[0, 1].set_title('Right BFLH Lengths - All Strides Overlaid', fontsize=14, fontweight='bold')
-axes[0, 1].legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
+axes[0, 1].set_title('Right BFLH Lengths - Last 3 Strides Overlaid', fontsize=14, fontweight='bold')
+axes[0, 1].legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=10)
 axes[0, 1].grid(True, alpha=0.3)
 axes[0, 1].set_xlim([0, 100])
 
-# Plot LEFT BFLH VELOCITIES
-for idx, (start_time, end_time) in enumerate(zip(left_stride_start_times, left_stride_end_times)):
+# Plot LEFT BFLH VELOCITIES (last 3 strides only)
+for plot_idx, stride_idx in enumerate(left_stride_indices):
+    start_time = left_stride_start_times[stride_idx]
+    end_time = left_stride_end_times[stride_idx]
+    
     stride_mtu_df = mtu_lengths_df[
         (mtu_lengths_df['time'] >= start_time) & 
         (mtu_lengths_df['time'] <= end_time)
@@ -262,23 +283,26 @@ for idx, (start_time, end_time) in enumerate(zip(left_stride_start_times, left_s
         
         # Plot the stride
         axes[1, 0].plot(normalized_x, normalized_velocity, 
-                       color=left_colors[idx], label=f'Stride {idx+1}', linewidth=2)
+                       color=left_colors[plot_idx], label=f'Stride {stride_idx+1}', linewidth=2)
         
         # Mark the peak
         max_idx = np.argmax(normalized_velocity)
         axes[1, 0].plot(normalized_x[max_idx], normalized_velocity[max_idx], 
-                       'o', color=left_colors[idx], markersize=8, markeredgecolor='black', markeredgewidth=1.5)
+                       'o', color=left_colors[plot_idx], markersize=8, markeredgecolor='black', markeredgewidth=1.5)
 
 axes[1, 0].set_xlabel('Stride Cycle (%)', fontsize=12)
 axes[1, 0].set_ylabel('MTU Velocity (Normalized MTU Lengths/s)', fontsize=12)
-axes[1, 0].set_title('Left BFLH Velocities - All Strides Overlaid', fontsize=14, fontweight='bold')
-axes[1, 0].legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
+axes[1, 0].set_title('Left BFLH Velocities - Last 3 Strides Overlaid', fontsize=14, fontweight='bold')
+axes[1, 0].legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=10)
 axes[1, 0].grid(True, alpha=0.3)
 axes[1, 0].set_xlim([0, 100])
 
 
-# Plot RIGHT BFLH VELOCITIES
-for idx, (start_time, end_time) in enumerate(zip(right_stride_start_times, right_stride_end_times)):
+# Plot RIGHT BFLH VELOCITIES (last 3 strides only)
+for plot_idx, stride_idx in enumerate(right_stride_indices):
+    start_time = right_stride_start_times[stride_idx]
+    end_time = right_stride_end_times[stride_idx]
+    
     stride_mtu_df = mtu_lengths_df[
         (mtu_lengths_df['time'] >= start_time) & 
         (mtu_lengths_df['time'] <= end_time)
@@ -298,23 +322,24 @@ for idx, (start_time, end_time) in enumerate(zip(right_stride_start_times, right
         
         # Plot the stride
         axes[1, 1].plot(normalized_x, normalized_velocity, 
-                       color=right_colors[idx], label=f'Stride {idx+1}', linewidth=2)
+                       color=right_colors[plot_idx], label=f'Stride {stride_idx+1}', linewidth=2)
         
         # Mark the peak
         max_idx = np.argmax(normalized_velocity)
         axes[1, 1].plot(normalized_x[max_idx], normalized_velocity[max_idx], 
-                       'o', color=right_colors[idx], markersize=8, markeredgecolor='black', markeredgewidth=1.5)
+                       'o', color=right_colors[plot_idx], markersize=8, markeredgecolor='black', markeredgewidth=1.5)
 
 axes[1, 1].set_xlabel('Stride Cycle (%)', fontsize=12)
 axes[1, 1].set_ylabel('MTU Velocity (Normalized MTU Lengths/s)', fontsize=12)
-axes[1, 1].set_title('Right BFLH Velocities - All Strides Overlaid', fontsize=14, fontweight='bold')
-axes[1, 1].legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
+axes[1, 1].set_title('Right BFLH Velocities - Last 3 Strides Overlaid', fontsize=14, fontweight='bold')
+axes[1, 1].legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=10)
 axes[1, 1].grid(True, alpha=0.3)
 axes[1, 1].set_xlim([0, 100])
 
 plt.tight_layout()
-plt.savefig(rf'{base_path}\bflh_mtu_all_strides_overlay_ID{subject}_{session}_fly_LSTM.png', 
+plt.savefig(rf'{base_path}\bflh_mtu_last3_strides_overlay_ID{subject}_{session}_fly_LSTM.png', 
             dpi=300, bbox_inches='tight')
 plt.show()
 
 print("\nOverlay plot saved successfully!")
+print(f"Plotted last {n_left_to_plot} left strides and last {n_right_to_plot} right strides")
