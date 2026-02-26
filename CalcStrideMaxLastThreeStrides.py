@@ -8,9 +8,9 @@ from scipy.interpolate import interp1d
 
 import utilsKinematics
 
-subject = 9
-session = "S3"
-base_path = rf'G:\Shared drives\Stanford Football\January_26\subject{subject}\Kinematics\Outputs'
+subject = 2
+session = "S4"
+base_path = rf'G:\Shared drives\Stanford Football\February_2\subject{subject}\Kinematics\Outputs'
 
 # Load stride times csv
 left_stride_times_file = rf'{base_path}\stride_times_left.csv'
@@ -24,7 +24,7 @@ right_stride_times_df = pd.read_csv(right_stride_times_file)
 #mtu_lengths_file = rf'{base_path}\muscle_tendon_lengths_ID{subject}_{session}_fly_LSTM.csv'
 
 # Plot the normalized lengths using this csv file instead
-mtu_lengths_file = rf'{base_path}\normalized_bflh_length_ID{subject}_{session}_fly_LSTM.csv'
+mtu_lengths_file = rf'{base_path}\normalized_bflh_length_ID{subject}_{session}_decel_LSTM.csv'
 mtu_lengths_df = pd.read_csv(mtu_lengths_file)
 
 print(f"Loaded {len(left_stride_times_df)} left stride time points")
@@ -108,8 +108,8 @@ right_output_df = pd.DataFrame({
 })
 
 # Save to CSV files
-left_output_file = rf'{base_path}\bflh_mtu_max_left_strides_ID{subject}_{session}_fly_LSTM.csv'
-right_output_file = rf'{base_path}\bflh_mtu_max_right_strides_ID{subject}_{session}_fly_LSTM.csv'
+left_output_file = rf'{base_path}\bflh_mtu_max_left_strides_ID{subject}_{session}_decel_LSTM.csv'
+right_output_file = rf'{base_path}\bflh_mtu_max_right_strides_ID{subject}_{session}_decel_LSTM.csv'
 
 left_output_df.to_csv(left_output_file, index=False)
 right_output_df.to_csv(right_output_file, index=False)
@@ -157,7 +157,7 @@ axes[1, 1].set_title('Right BFLH Max Velocities Across Strides')
 axes[1, 1].grid(True)
 
 plt.tight_layout()
-plt.savefig(r'G:\Shared drives\Stanford Football\January_19\subject10\Kinematics\Outputs\bflh_mtu_all_strides_summary_ID10_S2_fly_LSTM.png')
+plt.savefig(r'G:\Shared drives\Stanford Football\February_2\subject2\Kinematics\Outputs\bflh_mtu_all_strides_summary_ID2_S4_decel_LSTM.png')
 plt.show()
 
 print("\nPlot saved successfully!")
@@ -175,8 +175,8 @@ n_left_strides = len(left_bflh_l_max_lengths)
 n_right_strides = len(right_bflh_r_max_lengths)
 
 # Determine how many strides to plot (up to 3)
-n_left_to_plot = min(3, n_left_strides)
-n_right_to_plot = min(3, n_right_strides)
+n_left_to_plot = min(6, n_left_strides) #changed from 3 to 6 for decels
+n_right_to_plot = min(6, n_right_strides) #changed from 3 to 6 for decels
 
 # Get indices of last 3 strides
 left_stride_indices = list(range(n_left_strides - n_left_to_plot, n_left_strides))
@@ -217,10 +217,10 @@ for plot_idx, stride_idx in enumerate(left_stride_indices):
         axes[0, 0].plot(normalized_x[max_idx], normalized_length[max_idx], 
                        'o', color=left_colors[plot_idx], markersize=8, markeredgecolor='black', markeredgewidth=1.5)
 
-axes[0, 0].set_xlabel('Stride Cycle (%)', fontsize=12)
-axes[0, 0].set_ylabel('MTU Length (Normalized Lengths)', fontsize=12)
-axes[0, 0].set_title('Left BFLH Lengths - Last 3 Strides Overlaid', fontsize=14, fontweight='bold')
-axes[0, 0].legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=10)
+axes[0, 0].set_xlabel('Stride Cycle (%)', fontsize=18)
+axes[0, 0].set_ylabel('MTU Length (Normalized Lengths)', fontsize=18)
+axes[0, 0].set_title('Left BFLH Lengths - Last 6 Strides Overlaid', fontsize=18, fontweight='bold')
+axes[0, 0].legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=18)
 axes[0, 0].grid(True, alpha=0.3)
 axes[0, 0].set_xlim([0, 100])
 
@@ -252,10 +252,10 @@ for plot_idx, stride_idx in enumerate(right_stride_indices):
         axes[0, 1].plot(normalized_x[max_idx], normalized_length[max_idx], 
                        'o', color=right_colors[plot_idx], markersize=8, markeredgecolor='black', markeredgewidth=1.5)
 
-axes[0, 1].set_xlabel('Stride Cycle (%)', fontsize=12)
-axes[0, 1].set_ylabel('MTU Length (Normalized Lengths)', fontsize=12)
-axes[0, 1].set_title('Right BFLH Lengths - Last 3 Strides Overlaid', fontsize=14, fontweight='bold')
-axes[0, 1].legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=10)
+axes[0, 1].set_xlabel('Stride Cycle (%)', fontsize=18)
+axes[0, 1].set_ylabel('MTU Length (Normalized Lengths)', fontsize=18)
+axes[0, 1].set_title('Right BFLH Lengths - Last 6 Strides Overlaid', fontsize=18, fontweight='bold')
+axes[0, 1].legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=18)
 axes[0, 1].grid(True, alpha=0.3)
 axes[0, 1].set_xlim([0, 100])
 
@@ -290,10 +290,10 @@ for plot_idx, stride_idx in enumerate(left_stride_indices):
         axes[1, 0].plot(normalized_x[max_idx], normalized_velocity[max_idx], 
                        'o', color=left_colors[plot_idx], markersize=8, markeredgecolor='black', markeredgewidth=1.5)
 
-axes[1, 0].set_xlabel('Stride Cycle (%)', fontsize=12)
-axes[1, 0].set_ylabel('MTU Velocity (Normalized MTU Lengths/s)', fontsize=12)
-axes[1, 0].set_title('Left BFLH Velocities - Last 3 Strides Overlaid', fontsize=14, fontweight='bold')
-axes[1, 0].legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=10)
+axes[1, 0].set_xlabel('Stride Cycle (%)', fontsize=18)
+axes[1, 0].set_ylabel('MTU Velocity (Norm Lengths/s)', fontsize=18)
+axes[1, 0].set_title('Left BFLH Velocities - Last 6 Strides Overlaid', fontsize=18, fontweight='bold')
+axes[1, 0].legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=18)
 axes[1, 0].grid(True, alpha=0.3)
 axes[1, 0].set_xlim([0, 100])
 
@@ -329,15 +329,15 @@ for plot_idx, stride_idx in enumerate(right_stride_indices):
         axes[1, 1].plot(normalized_x[max_idx], normalized_velocity[max_idx], 
                        'o', color=right_colors[plot_idx], markersize=8, markeredgecolor='black', markeredgewidth=1.5)
 
-axes[1, 1].set_xlabel('Stride Cycle (%)', fontsize=12)
-axes[1, 1].set_ylabel('MTU Velocity (Normalized MTU Lengths/s)', fontsize=12)
-axes[1, 1].set_title('Right BFLH Velocities - Last 3 Strides Overlaid', fontsize=14, fontweight='bold')
-axes[1, 1].legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=10)
+axes[1, 1].set_xlabel('Stride Cycle (%)', fontsize=18)
+axes[1, 1].set_ylabel('MTU Velocity (Norm Lengths/s)', fontsize=18)
+axes[1, 1].set_title('Right BFLH Velocities - Last 6 Strides Overlaid', fontsize=18, fontweight='bold')
+axes[1, 1].legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=18)
 axes[1, 1].grid(True, alpha=0.3)
 axes[1, 1].set_xlim([0, 100])
 
 plt.tight_layout()
-plt.savefig(rf'{base_path}\bflh_mtu_last3_strides_overlay_ID{subject}_{session}_fly_LSTM.png', 
+plt.savefig(rf'{base_path}\bflh_mtu_last6_strides_overlay_ID{subject}_{session}_fly_LSTM.png', 
             dpi=300, bbox_inches='tight')
 plt.show()
 
