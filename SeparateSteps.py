@@ -6,7 +6,7 @@ from scipy.signal import spectrogram
 
 subject_num = 2
 # %% Load data
-data_folder = rf'G:\Shared drives\Stanford Football\February_2\subject{subject_num}\Kinematics\Outputs\shank_angular_velocity_ID{subject_num}_S4_decel_LSTM.csv'
+data_folder = rf'G:\Shared drives\Stanford Football\February_9\subject{subject_num}\Kinematics\Outputs\shank_angular_velocity_ID{subject_num}_S5_decel_LSTM_filtered.csv'
 
 # Load csv file as dataframe
 df = pd.read_csv(data_folder)

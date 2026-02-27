@@ -30,11 +30,11 @@ subject_num = 2
 # %% User inputs.
 # Specify session id; see end of url in app.opencap.ai/session/<session_id>.
 #session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
-session_id = os.path.normpath(f'G:\\Shared drives\\Stanford Football\\February_2\\subject{subject_num}\\OpenSimData\\OpenPose_default\\3-cameras')
+session_id = os.path.normpath(f'G:\\Shared drives\\Stanford Football\\February_9\\subject{subject_num}\\OpenSimData\\OpenPose_default\\3-cameras')
 
 
 # Specify trial names in a list; use None to process all trials in a session.
-specific_trial_names = [f'ID{subject_num}_S4_decel_LSTM'] #'ACCEL_LSTM', 'DECEL_LSTM']
+specific_trial_names = [f'ID{subject_num}_S5_decel_LSTM_filtered'] #'ACCEL_LSTM', 'DECEL_LSTM']
 
 # Specify where to download the data.
 data_folder = os.path.join(session_id)
