@@ -25,16 +25,25 @@ from utils import download_kinematics, get_model_name_from_metadata
 from utilsPlotting import plot_dataframe
 import opensim as osim
 
-
+# Requirements to Change for each run
+#########################################################################
 subject_num = 2
+date = 'March_2'
+session_num = '7'
+type = 'sprint'
+##########################################################################
+
+
+
+
 # %% User inputs.
 # Specify session id; see end of url in app.opencap.ai/session/<session_id>.
 #session_id = "4d5c3eb1-1a59-4ea1-9178-d3634610561c"
-session_id = os.path.normpath(f'G:\\Shared drives\\Stanford Football\\February_9\\subject{subject_num}\\OpenSimData\\OpenPose_default\\3-cameras')
+session_id = os.path.normpath(f'G:\\Shared drives\\Stanford Football\\{date}\\subject{subject_num}\\OpenSimData\\OpenPose_default\\3-cameras')
 
 
 # Specify trial names in a list; use None to process all trials in a session.
-specific_trial_names = [f'ID{subject_num}_S5_decel_LSTM_filtered'] #'ACCEL_LSTM', 'DECEL_LSTM']
+specific_trial_names = [f'ID{subject_num}_S{session_num}_{type}_LSTM_filtered'] #'ACCEL_LSTM', 'DECEL_LSTM']
 
 # Specify where to download the data.
 data_folder = os.path.join(session_id)
@@ -165,6 +174,7 @@ for trial_name in trial_names:
     # Get muscle-tendon lengths and moment arms.
     muscle_tendon_lengths[trial_name] = kinematics[trial_name].get_muscle_tendon_lengths()
     # moment_arms[trial_name] = kinematics[trial_name].get_moment_arms()
+    muscle_tendon_velocities = kinematics[trial_name].get_muscle_tendon_velocities(lowpass_cutoff_frequency=10)
 
     # Get center of mass values, speeds, and accelerations.
     center_of_mass['values'][trial_name] = kinematics[trial_name].get_center_of_mass_values(lowpass_cutoff_frequency=10)
@@ -208,6 +218,10 @@ os.makedirs(output_csv_dir, exist_ok=True)
 output_csv_path = os.path.join(output_csv_dir, 'coordinate_speeds_{}.csv'.format(trial_names[0]))
 coordinates['speeds'][trial_names[0]].to_csv(output_csv_path)
 
+# Save center of mass speeds
+output_csv_path = os.path.join(output_csv_dir, 'center_of_mass_speeds_{}.csv'.format(trial_names[0]))
+center_of_mass['speeds'][trial_names[0]].to_csv(output_csv_path)
+
 # Save shank angular velocity
 output_csv_path = os.path.join(output_csv_dir, 'shank_angular_velocity_{}.csv'.format(trial_names[0]))
 angular_velocity[trial_names[0]].to_csv(output_csv_path)
@@ -215,6 +229,10 @@ angular_velocity[trial_names[0]].to_csv(output_csv_path)
 # Save muscle-tendon lengths (original)
 output_csv_path = os.path.join(output_csv_dir, 'muscle_tendon_lengths_{}.csv'.format(trial_names[0]))
 muscle_tendon_lengths[trial_names[0]].to_csv(output_csv_path)
+
+# Save muscle-tendon velocities
+output_csv_path = os.path.join(output_csv_dir, 'muscle_tendon_velocities_{}.csv'.format(trial_names[0]))
+muscle_tendon_velocities.to_csv(output_csv_path) 
 
 # Save normalized muscle-tendon lengths (all muscles)
 output_csv_path = os.path.join(output_csv_dir, 'normalized_muscle_tendon_lengths_{}.csv'.format(trial_names[0]))

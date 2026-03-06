@@ -12,14 +12,21 @@ def butter_lowpass_filter(data, cutoff=15, fs=1000, order=4):
     y = filtfilt(b, a, data)
     return y
 
-date = 'February_9'
+
+# Requirements to Change for each run
+#######################################################################################
+date = 'March_2'
 subject_id = 'subject2'
+subject_num = (subject_id.replace('subject', ''))
+type = 'sprint'
+session_num = '7'
+#######################################################################################
 
 data_dir = f'G:\\Shared drives\\Stanford Football'
 date_dir = f'{data_dir}\\{date}'
 subject_dir = f'{date_dir}\\{subject_id}'
 
-kinematics_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID2_S5_decel_LSTM.mot'
+kinematics_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM.mot'
 
 # Load the kinematics data
 mot_table = osim.TimeSeriesTable(kinematics_file)
@@ -59,7 +66,7 @@ mot_table_filtered = osim.TimeSeriesTable(time, filtered_matrix, list(column_lab
 for key in keys:
     mot_table_filtered.addTableMetaDataString(key, mot_table.getTableMetaDataString(key))
 
-output_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID2_S5_decel_LSTM_filtered.mot'
+output_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM_filtered.mot'
 
 # Write to file
 osim.STOFileAdapter.write(mot_table_filtered, output_file)

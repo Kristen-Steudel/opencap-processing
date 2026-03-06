@@ -5,6 +5,16 @@ from scipy.signal import butter, filtfilt
 import matplotlib.pyplot as plt
 from pathlib import Path
 
+# Requirements to Change for each run
+########################################################################
+date = 'March_2'
+subject_id = 'subject2'
+subject_num = (subject_id.replace('subject', ''))
+session_num = '7'
+type = 'sprint'
+dist_threshold = -12.0  # Position threshold for filtering strides (e.g., -8m means keep strides from -8m to 0m)
+#########################################################################
+
 def butter_lowpass_filter(data, cutoff=2, fs=1000, order=4):
     nyq = 0.5 * fs
     normal_cutoff = cutoff / nyq
@@ -131,11 +141,11 @@ def save_stride_velocities(stride_data, output_dir):
     return summary_df
 
 def filter_strides_by_quality(summary_df, stride_data, method='position', n_strides=None, 
-                               min_speed=None, max_speed=None, position_threshold=-8.0):
+                               min_speed=None, max_speed=None, position_threshold=dist_threshold):
     """
     Filter strides based on capture volume proximity and speed consistency
     
-    For your data: subject runs from -15m to 0m, trust strides beyond -8m (i.e., -8m to 0m)
+    For my data: subject runs from -15m to 0m, trust strides beyond -{dist_threshold}m (i.e., -{dist_threshold}m to 0m)
     
     Parameters:
     -----------
@@ -148,6 +158,12 @@ def filter_strides_by_quality(summary_df, stride_data, method='position', n_stri
         'position': Filter by position threshold (strides closer to 0m)
         'speed': Filter by speed range
         'combined': Use multiple criteria
+
+        I want the position threshold for deceleration data because
+        it's okay if the speed is slow
+
+        I wmay want a speed threshold for acceleration or 100% max speed data
+
     n_strides : int, optional
         Number of last strides to keep (for 'last_n' method)
     min_speed : float, optional
@@ -155,7 +171,7 @@ def filter_strides_by_quality(summary_df, stride_data, method='position', n_stri
     max_speed : float, optional
         Maximum average velocity magnitude threshold (m/s)
     position_threshold : float, optional
-        Minimum pelvis_x position (default -8.0m, keeps strides from -8m to 0m)
+        Minimum pelvis_x position (default -{dist_threshold}m, keeps strides from -{dist_threshold}m to 0m)
     
     Returns:
     --------
@@ -176,7 +192,7 @@ def filter_strides_by_quality(summary_df, stride_data, method='position', n_stri
     # Method 2: Filter by position (keep strides with avg_position > threshold, i.e., closer to 0)
     elif method == 'position' and position_threshold is not None:
         # Keep strides where average position is GREATER than threshold
-        # (e.g., -5m is > -8m, so it's kept; -10m is < -8m, so it's filtered)
+        # (e.g., -5m is > -8m, so it's kept; -10m is < -8m, so it's filtered) if dist_threshold is -8m
         mask = summary_df['avg_position'] > position_threshold
         print(f"Filtering: keeping strides with avg_position > {position_threshold}m (closer to capture volume)")
     
@@ -217,7 +233,7 @@ def filter_strides_by_quality(summary_df, stride_data, method='position', n_stri
     return filtered_df, valid_stride_numbers
 
 def visualize_stride_quality(time, pelvis_x_filtered, times_frame, summary_df, 
-                             valid_stride_numbers, output_dir, position_threshold=-8.0):
+                             valid_stride_numbers, output_dir, position_threshold=dist_threshold):
     """
     Visualize which strides are kept vs filtered based on capture volume proximity
     """
@@ -289,15 +305,12 @@ def visualize_stride_quality(time, pelvis_x_filtered, times_frame, summary_df,
 
 # ===== MAIN EXECUTION =====
 
-date = 'February_9'
-subject_id = 'subject2'
-
 data_dir = f'G:\\Shared drives\\Stanford Football'
 date_dir = f'{data_dir}\\{date}'
 subject_dir = f'{date_dir}\\{subject_id}'
 
 stride_times = f'{subject_dir}\\Kinematics\\Outputs\\stride_times.csv'
-kinematics_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID2_S5_decel_LSTM_filtered.mot'
+kinematics_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM_filtered.mot'
 
 # Load data
 print("Loading data...")
@@ -344,7 +357,7 @@ print(f"  Last stride avg position: {summary_df['avg_position'].iloc[-1]:.2f} m"
 
 # ===== FILTERING OPTIONS =====
 
-# RECOMMENDED: Filter by position threshold (keep strides beyond -8m, i.e., closer to 0m)
+# RECOMMENDED: Filter by position threshold (keep strides beyond -{dist_threshold}m, i.e., closer to 0m)
 print("\n" + "="*60)
 print("FILTERING STRIDES")
 print("="*60)
@@ -353,7 +366,7 @@ filtered_summary, valid_stride_numbers = filter_strides_by_quality(
     summary_df, 
     stride_data,
     method='position',
-    position_threshold=-8.0  # Keep strides with avg_position > -8.0m (closer to capture volume)
+    position_threshold=dist_threshold  # Keep strides with avg_position > {dist_threshold}m (closer to capture volume)
 )
 
 # Alternative Option 1: Keep only last N strides
@@ -369,7 +382,7 @@ filtered_summary, valid_stride_numbers = filter_strides_by_quality(
 #     summary_df, 
 #     stride_data,
 #     method='combined',
-#     position_threshold=-8.0,
+#     position_threshold=dist_threshold,
 #     min_speed=3.0,  # Minimum running speed
 #     max_speed=8.0   # Maximum running speed
 # )
@@ -381,7 +394,7 @@ print(f"\nFiltered summary saved to: {output_dir}/stride_velocity_summary_filter
 # Create detailed visualization
 print("\nGenerating visualizations...")
 visualize_stride_quality(time, pelvis_x_filtered, times_frame, summary_df, 
-                         valid_stride_numbers, output_dir, position_threshold=-8.0)
+                         valid_stride_numbers, output_dir, position_threshold=dist_threshold)
 
 # Print statistics for valid strides only
 print(f"\n{'='*60}")
@@ -426,7 +439,7 @@ axes[1, 0].grid(True, alpha=0.3)
 # Plot 4: Position vs stride number (shows progression)
 axes[1, 1].plot(filtered_summary['stride_number'], filtered_summary['avg_position'], 
                 'o-', color='orange', markersize=8, linewidth=2)
-axes[1, 1].axhline(y=-8.0, color='red', linestyle='--', linewidth=2, label='Threshold (-8m)')
+axes[1, 1].axhline(y=dist_threshold, color='red', linestyle='--', linewidth=2, label=f'Threshold ({dist_threshold}m)')
 axes[1, 1].set_xlabel('Stride Number')
 axes[1, 1].set_ylabel('Average Position (m)')
 axes[1, 1].set_title('Position Across Valid Strides')

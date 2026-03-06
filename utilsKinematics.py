@@ -22,6 +22,8 @@ import os
 import glob
 import opensim
 import copy
+
+from scipy import signal
 import utils
 import numpy as np
 import pandas as pd
@@ -359,6 +361,79 @@ class kinematics:
         
         return muscle_tendon_lengths
     
+    def get_muscle_tendon_velocities(self, lowpass_cutoff_frequency=None):
+        """ 
+        Get muscle-tendon unit velocities using OpenSim's built-in function
+        Parameters:
+        lowpass_cutoff_frequency: float, optional
+            Cutoff frequency for low-pass filter (Hz). If None, no filtering is applied.
+
+        Returns:
+        ----------
+        pandas.DataFrame
+            DataFrame with time and muscle-tendon velocities for all muscles
+          """
+        # Load model and get the coordinates
+        model = self.model
+        state = model.initSystem()
+
+        # Get coordinate values (positions)
+        coordinate_values = self.get_coordinate_values(in_degrees = False)
+
+        # Get coordinate sppeds (velocities)
+        coordinate_speeds = self.get_coordinate_speeds(in_degrees = False, lowpass_cutoff_frequency=lowpass_cutoff_frequency)
+
+        # Get muscles 
+        muscles = model.getMuscles()
+        n_muscles = muscles.getSize()
+        n_frames = len(coordinate_values)
+
+        # Initialize storage for velocities
+        muscle_names = []
+        velocities = np.zeros((n_frames, n_muscles))
+
+        # Loop through each time frame
+        for i in range(n_frames):
+            # Set the state for this time frame
+            for coord_name in coordinate_values.columns:
+                if coord_name != 'time':
+                    coord = model.getCoordinateSet().get(coord_name)
+                    coord.setValue(state, coordinate_values[coord_name].iloc[i])
+                    coord.setSpeedValue(state, coordinate_speeds[coord_name].iloc[i])
+
+            model.realizeVelocity(state)
+
+            # Get muscle-tendon velocities
+            for j in range(n_muscles):
+                muscle = muscles.get(j)
+                if i == 0:
+                    muscle_names.append(muscle.getName())
+                velocities[i, j] = muscle.getLengtheningSpeed(state) # Get lengthening speed is the function
+
+        # Create DataFrame
+        mtv_data = {'time': coordinate_values['time'].values}
+        for j, name in enumerate(muscle_names):
+            mtv_data[name] = velocities[:, j]
+
+        df = pd.DataFrame(mtv_data)
+
+            # Apply optional filtering
+
+        if lowpass_cutoff_frequency is not None:
+            time = df['time'].values
+            dt = np.mean(np.diff(time))
+            fs = 1.0 / dt
+            fc = lowpass_cutoff_frequency
+            w = fc / (fs /2)
+            b, a = signal.butter(4, w, 'low')
+
+            for col in df.columns:
+                if col != 'time':
+                    if col != 'time':
+                        df[col] = signal.filtfilt(b, a, df[col].values)
+
+        return df
+
     def get_moment_arms(self, lowpass_cutoff_frequency=-1):
         
         # Compute moment arms.

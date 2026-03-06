@@ -1,3 +1,6 @@
+# Separate the steps detecting touchdown as the minimal vertical velocity of the pelvis center of mass and 
+# the maximal knee extension angle as the take-off events for both legs
+
 import os
 import pandas as pd
 import numpy as np
