@@ -174,7 +174,7 @@ for trial_name in trial_names:
     # Get muscle-tendon lengths and moment arms.
     muscle_tendon_lengths[trial_name] = kinematics[trial_name].get_muscle_tendon_lengths()
     # moment_arms[trial_name] = kinematics[trial_name].get_moment_arms()
-    muscle_tendon_velocities = kinematics[trial_name].get_muscle_tendon_velocities(lowpass_cutoff_frequency=10)
+    muscle_tendon_velocities = kinematics[trial_name].get_muscle_tendon_velocities(lowpass_cutoff_frequency=5)
 
     # Get center of mass values, speeds, and accelerations.
     center_of_mass['values'][trial_name] = kinematics[trial_name].get_center_of_mass_values(lowpass_cutoff_frequency=10)
