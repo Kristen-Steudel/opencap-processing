@@ -27,7 +27,7 @@ import opensim as osim
 
 # Requirements to Change for each run
 #########################################################################
-subject_num = 2
+subject_num = 5
 date = 'March_2'
 session_num = '7'
 type = 'sprint'

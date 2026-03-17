@@ -9,8 +9,9 @@ from scipy.interpolate import interp1d
 import utilsKinematics
 
 subject = 2
-session = "S5"
-base_path = rf'G:\Shared drives\Stanford Football\February_9\subject{subject}\Kinematics\Outputs'
+session = "S7"
+base_path = rf'G:\Shared drives\Stanford Football\March_2\subject{subject}\Kinematics\Outputs'
+type = 'sprint'
 
 # Load stride times csv
 left_stride_times_file = rf'{base_path}\stride_times_left.csv'
@@ -24,7 +25,7 @@ right_stride_times_df = pd.read_csv(right_stride_times_file)
 #mtu_lengths_file = rf'{base_path}\muscle_tendon_lengths_ID{subject}_{session}_fly_LSTM.csv'
 
 # Plot the normalized lengths using this csv file instead
-mtu_lengths_file = rf'{base_path}\normalized_bflh_length_ID{subject}_{session}_decel_LSTM_filtered.csv'
+mtu_lengths_file = rf'{base_path}\normalized_muscle_tendon_lengths_ID{subject}_{session}_{type}_LSTM_filtered.csv'
 mtu_lengths_df = pd.read_csv(mtu_lengths_file)
 
 print(f"Loaded {len(left_stride_times_df)} left stride time points")
@@ -33,11 +34,13 @@ print(f"Loaded {len(right_stride_times_df)} right stride time points")
 # Initialize lists to store max values for each stride
 left_bflh_l_max_lengths = []
 left_bflh_l_max_velocities = []
+left_bflh_l_avg_velocities = []
 left_stride_start_times = []
 left_stride_end_times = []
 
 right_bflh_r_max_lengths = []
 right_bflh_r_max_velocities = []
+right_bflh_r_avg_velocities = []
 right_stride_start_times = []
 right_stride_end_times = []
 
@@ -60,10 +63,12 @@ for i in range(0, len(left_stride_times_df) - 1):
         # Find max values
         max_length = stride_mtu_df['bflh_l'].max()
         max_velocity = stride_mtu_df['bflh_l_vel'].max()
+        avg_velocity = stride_mtu_df[stride_mtu_df['bflh_l_vel'] > 0]['bflh_l_vel'].mean()
         
         # Store results
         left_bflh_l_max_lengths.append(max_length)
         left_bflh_l_max_velocities.append(max_velocity)
+        left_bflh_l_avg_velocities.append(avg_velocity)
         left_stride_start_times.append(takeoff_time)
         left_stride_end_times.append(touchdown_time)
 
@@ -85,10 +90,14 @@ for i in range(0, len(right_stride_times_df) - 1):
         # Find max values
         max_length = stride_mtu_df['bflh_r'].max()
         max_velocity = stride_mtu_df['bflh_r_vel'].max()
+
+        # Find the average lengthening velocity, implement a boolean mask to select only the positive velocity values
+        avg_velocity = stride_mtu_df[stride_mtu_df['bflh_r_vel'] > 0]['bflh_r_vel'].mean()
         
         # Store results
         right_bflh_r_max_lengths.append(max_length)
         right_bflh_r_max_velocities.append(max_velocity)
+        right_bflh_r_avg_velocities.append(avg_velocity)
         right_stride_start_times.append(takeoff_time)
         right_stride_end_times.append(touchdown_time)
 
@@ -97,19 +106,21 @@ left_output_df = pd.DataFrame({
     'stride_start_time': left_stride_start_times,
     'stride_end_time': left_stride_end_times,
     'left_bflh_max_length': left_bflh_l_max_lengths,
-    'left_bflh_max_velocity': left_bflh_l_max_velocities
+    'left_bflh_max_velocity': left_bflh_l_max_velocities,
+    'left_bflh_avg_velocity': left_bflh_l_avg_velocities
 })
 
 right_output_df = pd.DataFrame({
     'stride_start_time': right_stride_start_times,
     'stride_end_time': right_stride_end_times,
     'right_bflh_max_length': right_bflh_r_max_lengths,
-    'right_bflh_max_velocity': right_bflh_r_max_velocities
+    'right_bflh_max_velocity': right_bflh_r_max_velocities,
+    'right_bflh_avg_velocity': right_bflh_r_avg_velocities
 })
 
 # Save to CSV files
-left_output_file = rf'{base_path}\bflh_mtu_max_left_strides_ID{subject}_{session}_decel_LSTM_filtered.csv'
-right_output_file = rf'{base_path}\bflh_mtu_max_right_strides_ID{subject}_{session}_decel_LSTM_filtered.csv'
+left_output_file = rf'{base_path}\bflh_mtu_max_left_strides_ID{subject}_{session}_{type}_LSTM_filtered.csv'
+right_output_file = rf'{base_path}\bflh_mtu_max_right_strides_ID{subject}_{session}_{type}_LSTM_filtered.csv'
 
 left_output_df.to_csv(left_output_file, index=False)
 right_output_df.to_csv(right_output_file, index=False)
@@ -126,7 +137,7 @@ print("\nRight Stride Summary:")
 print(right_output_df.describe())
 
 # Create visualization for all strides
-fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+fig, axes = plt.subplots(2, 3, figsize=(15, 10))
 
 # Left max lengths
 axes[0, 0].plot(range(len(left_bflh_l_max_lengths)), left_bflh_l_max_lengths, 'o-', color='blue')
@@ -145,16 +156,31 @@ axes[0, 1].grid(True)
 # Left max velocities
 axes[1, 0].plot(range(len(left_bflh_l_max_velocities)), left_bflh_l_max_velocities, 'o-', color='blue')
 axes[1, 0].set_xlabel('Stride Number')
-axes[1, 0].set_ylabel('Max MTU Velocity (Normalzied Lengths/s)')
+axes[1, 0].set_ylabel('Max MTU Velocity (Normalized Lengths/s)')
 axes[1, 0].set_title('Left BFLH Max Velocities Across Strides')
 axes[1, 0].grid(True)
 
 # Right max velocities
 axes[1, 1].plot(range(len(right_bflh_r_max_velocities)), right_bflh_r_max_velocities, 'o-', color='red')
 axes[1, 1].set_xlabel('Stride Number')
-axes[1, 1].set_ylabel('Max MTU Velocity (Normalzied Lengths/s)')
+axes[1, 1].set_ylabel('Max MTU Velocity (Normalized Lengths/s)')
 axes[1, 1].set_title('Right BFLH Max Velocities Across Strides')
 axes[1, 1].grid(True)
+
+# Left max velocities
+axes[0, 2].plot(range(len(left_bflh_l_avg_velocities)), left_bflh_l_avg_velocities, 'o-', color='blue')
+axes[0, 2].set_xlabel('Stride Number')
+axes[0, 2].set_ylabel('Avg MTU Lengthening Velocity (Normalized Lengths/s)')
+axes[0, 2].set_title('Left BFLH Avg Lengthening Velocities Across Strides')
+axes[0, 2].grid(True)
+
+# Right max velocities
+axes[1, 2].plot(range(len(right_bflh_r_avg_velocities)), right_bflh_r_avg_velocities, 'o-', color='red')
+axes[1, 2].set_xlabel('Stride Number')
+axes[1, 2].set_ylabel('Avg MTU LengtheningVelocity (Normalized Lengths/s)')
+axes[1, 2].set_title('Right BFLH Avg LengtheningVelocities Across Strides')
+axes[1, 2].grid(True)
+
 
 plt.tight_layout()
 plt.savefig(r'G:\Shared drives\Stanford Football\February_9\subject2\Kinematics\Outputs\bflh_mtu_all_strides_summary_ID2_S5_decel_LSTM_filtered.png')

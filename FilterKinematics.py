@@ -20,6 +20,7 @@ subject_id = 'subject2'
 subject_num = (subject_id.replace('subject', ''))
 type = 'sprint'
 session_num = '7'
+filt_freq = 10  # Hz, was 15 Hz
 #######################################################################################
 
 data_dir = f'G:\\Shared drives\\Stanford Football'
@@ -53,7 +54,7 @@ filtered_matrix = osim.Matrix(n_rows, n_cols)
 
 for i, label in enumerate(column_labels):
     data = mot_table.getDependentColumn(label).to_numpy()
-    filtered_data = butter_lowpass_filter(data, cutoff=15, fs=fs, order=4)
+    filtered_data = butter_lowpass_filter(data, cutoff=filt_freq, fs=fs, order=4)
     
     # Fill the matrix column by column
     for j in range(len(filtered_data)):
