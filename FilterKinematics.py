@@ -15,11 +15,11 @@ def butter_lowpass_filter(data, cutoff=15, fs=1000, order=4):
 
 # Requirements to Change for each run
 #######################################################################################
-date = 'March_2'
+date = 'March_16'
 subject_id = 'subject2'
 subject_num = (subject_id.replace('subject', ''))
-type = 'sprint'
-session_num = '7'
+type = 'run'
+session_num = '8'
 filt_freq = 10  # Hz, was 15 Hz
 #######################################################################################
 
@@ -67,7 +67,7 @@ mot_table_filtered = osim.TimeSeriesTable(time, filtered_matrix, list(column_lab
 for key in keys:
     mot_table_filtered.addTableMetaDataString(key, mot_table.getTableMetaDataString(key))
 
-output_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM_filtered.mot'
+output_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM_filtered_{filt_freq}Hz.mot'
 
 # Write to file
 osim.STOFileAdapter.write(mot_table_filtered, output_file)

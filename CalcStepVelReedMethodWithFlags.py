@@ -7,11 +7,11 @@ from pathlib import Path
 
 # Requirements to Change for each run
 ########################################################################
-date = 'March_2'
-subject_id = 'subject5'
+date = 'March_16'
+subject_id = 'subject2'
 subject_num = (subject_id.replace('subject', ''))
-session_num = '7'
-type = 'sprint'
+session_num = '8'
+type = 'run'
 dist_threshold = -12.0  # Position threshold for filtering strides (e.g., -8m means keep strides from -8m to 0m)
 #########################################################################
 
@@ -42,8 +42,9 @@ def calculate_stride_velocities(pelvis_x_filtered, time, stride_times_df):
         List containing velocity data for each stride
     """
     stride_data = []
+    total_strides = len(stride_times_df) - 1
     
-    for idx in range(len(stride_times_df)- 1):
+    for idx in range(total_strides):
         start_time = stride_times_df.iloc[idx]['time']
         end_time = stride_times_df.iloc[idx + 1]['time']
         start_side = stride_times_df.iloc[idx]['side']
@@ -70,9 +71,12 @@ def calculate_stride_velocities(pelvis_x_filtered, time, stride_times_df):
         
         # Calculate average position for this stride (for quality assessment)
         avg_position = np.mean(stride_position)
+
+        # stride number counting up from the 0 mark
+        stride_number = total_strides - idx 
         
         stride_data.append({
-            'stride_number': idx,
+            'stride_number': stride_number, #idx, 
             'start_time': start_time,
             'end_time': end_time,
             'start_side': start_side,
@@ -295,7 +299,7 @@ def visualize_stride_quality(time, pelvis_x_filtered, times_frame, summary_df,
                 label=f'Threshold ({position_threshold}m)')
     plt.xlabel('Stride Number')
     plt.ylabel('Average Position (m)')
-    plt.title('Average Position per Stride\n(Higher values = closer to capture volume at 0m)')
+    plt.title('Average Position per Stride\n(Lower stride values = closer to capture volume at 0m)')
     plt.legend()
     plt.grid(True, axis='y', alpha=0.3)
     

@@ -27,10 +27,11 @@ import opensim as osim
 
 # Requirements to Change for each run
 #########################################################################
-subject_num = 5
-date = 'March_2'
-session_num = '7'
-type = 'sprint'
+subject_num = 2
+date = 'March_16'
+session_num = '8'
+type = 'run'
+filt_freq = 10  # Hz, was 15 Hz
 ##########################################################################
 
 
@@ -43,7 +44,7 @@ session_id = os.path.normpath(f'G:\\Shared drives\\Stanford Football\\{date}\\su
 
 
 # Specify trial names in a list; use None to process all trials in a session.
-specific_trial_names = [f'ID{subject_num}_S{session_num}_{type}_LSTM_filtered'] #'ACCEL_LSTM', 'DECEL_LSTM']
+specific_trial_names = [f'ID{subject_num}_S{session_num}_{type}_LSTM_filtered_{filt_freq}Hz'] #'ACCEL_LSTM', 'DECEL_LSTM']
 
 # Specify where to download the data.
 data_folder = os.path.join(session_id)

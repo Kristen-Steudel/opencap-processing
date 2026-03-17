@@ -9,9 +9,10 @@ from scipy.interpolate import interp1d
 import utilsKinematics
 
 subject = 2
-session = "S7"
-base_path = rf'G:\Shared drives\Stanford Football\March_2\subject{subject}\Kinematics\Outputs'
-type = 'sprint'
+session = "S8"
+base_path = rf'G:\Shared drives\Stanford Football\March_16\subject{subject}\Kinematics\Outputs'
+type = 'run'
+filt_freq = 10  # Hz, was 15 Hz
 
 # Load stride times csv
 left_stride_times_file = rf'{base_path}\stride_times_left.csv'
@@ -25,7 +26,7 @@ right_stride_times_df = pd.read_csv(right_stride_times_file)
 #mtu_lengths_file = rf'{base_path}\muscle_tendon_lengths_ID{subject}_{session}_fly_LSTM.csv'
 
 # Plot the normalized lengths using this csv file instead
-mtu_lengths_file = rf'{base_path}\normalized_muscle_tendon_lengths_ID{subject}_{session}_{type}_LSTM_filtered.csv'
+mtu_lengths_file = rf'{base_path}\normalized_muscle_tendon_lengths_ID{subject}_{session}_{type}_LSTM_filtered_{filt_freq}Hz.csv'
 mtu_lengths_df = pd.read_csv(mtu_lengths_file)
 
 print(f"Loaded {len(left_stride_times_df)} left stride time points")

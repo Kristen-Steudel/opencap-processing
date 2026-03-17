@@ -7,13 +7,14 @@ from scipy.signal import spectrogram
 # Requirements to Change for each run
 #########################################################################
 subject_num = 2
-date = 'March_2'
-session_num = '7'
-type = 'sprint'
+date = 'March_16'
+session_num = '8'
+type = 'run'
+filt_freq = 10  # Hz, was 15 Hz
 ##########################################################################
 
 # %% Load data
-data_folder = rf'G:\Shared drives\Stanford Football\{date}\subject{subject_num}\Kinematics\Outputs\shank_angular_velocity_ID{subject_num}_S{session_num}_{type}_LSTM_filtered.csv'
+data_folder = rf'G:\Shared drives\Stanford Football\{date}\subject{subject_num}\Kinematics\Outputs\shank_angular_velocity_ID{subject_num}_S{session_num}_{type}_LSTM_filtered_{filt_freq}Hz.csv'
 
 # Load csv file as dataframe
 df = pd.read_csv(data_folder)
