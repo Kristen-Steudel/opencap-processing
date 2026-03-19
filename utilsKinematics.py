@@ -66,13 +66,13 @@ class kinematics:
             if os.path.exists(search_root):
                 if modelName is not None:
                     candidates = glob.glob(os.path.join(search_root, '**', f'{modelName}.osim'), recursive=True)
-                if not candidates:
+                if not candidates and modelName is None:
                     candidates = glob.glob(os.path.join(search_root, '**', '*.osim'), recursive=True)
             # also try searching from sessionDir as a last resort
             if not candidates:
                 if modelName is not None:
                     candidates = glob.glob(os.path.join(sessionDir, '**', f'{modelName}.osim'), recursive=True)
-                if not candidates:
+                if not candidates and modelName is None:
                     candidates = glob.glob(os.path.join(sessionDir, '**', '*.osim'), recursive=True)
 
             if candidates:
@@ -80,6 +80,7 @@ class kinematics:
             else:
                 raise Exception('Model path: ' + modelPath + ' does not exist. Searched under: ' + search_root)
 
+        self.modelPath = modelPath
         self.model = opensim.Model(modelPath)
         self.model.initSystem()
         
@@ -94,18 +95,15 @@ class kinematics:
             candidates = []
             if os.path.exists(search_root):
                 candidates = glob.glob(os.path.join(search_root, '**', f'{trialName}.mot'), recursive=True)
-                if not candidates:
-                    candidates = glob.glob(os.path.join(search_root, '**', '*.mot'), recursive=True)
             if not candidates:
                 # fallback: search entire sessionDir
                 candidates = glob.glob(os.path.join(sessionDir, '**', f'{trialName}.mot'), recursive=True)
-                if not candidates:
-                    candidates = glob.glob(os.path.join(sessionDir, '**', '*.mot'), recursive=True)
             if candidates:
                 motionPath = candidates[0]
             else:
-                raise Exception('Motion file: ' + os.path.join('OpenSimData','Kinematics', trialName + '.mot') + ' does not exist. Searched under: ' + sessionDir)
+                raise Exception('Motion file: ' + os.path.join('OpenSimData','Kinematics', trialName + '.mot') + ' does not exist. Searched for exact trial name under: ' + sessionDir)
 
+        self.motionPath = motionPath
         # Create time-series table with coordinate values.             
         self.table = opensim.TimeSeriesTable(motionPath)        
         tableProcessor = opensim.TableProcessor(self.table)
@@ -119,15 +117,20 @@ class kinematics:
         
         # Filter coordinate values.
         if lowpass_cutoff_frequency_for_coordinate_values > 0:
-            tableProcessor.append(
-                opensim.TabOpLowPassFilter(
-                    lowpass_cutoff_frequency_for_coordinate_values))
+            if self.table.getNumRows() < 4:
+                print(
+                    "Warning: Skipping low-pass filter because motion file has "
+                    f"{self.table.getNumRows()} rows (<4 required).")
+            else:
+                tableProcessor.append(
+                    opensim.TabOpLowPassFilter(
+                        lowpass_cutoff_frequency_for_coordinate_values))
 
         # Convert in radians.
         self.table = tableProcessor.processAndConvertToRadians(self.model)
         
         # Trim if filtered.
-        if lowpass_cutoff_frequency_for_coordinate_values > 0:
+        if lowpass_cutoff_frequency_for_coordinate_values > 0 and self.table.getNumRows() >= 4:
             time_temp = self.table.getIndependentColumn()            
             self.table.trim(
                 time_temp[self.table.getNearestRowIndexForTime(self.time[0])],
@@ -178,13 +181,34 @@ class kinematics:
         self.nCoordinates = self.coordinateSet.getSize()
         self.coordinates = [self.coordinateSet.get(i).getName() 
                             for i in range(self.nCoordinates)]
+        self.availableCoordinates = [
+            c for c in self.coordinates if c in self.columnLabels]
+        self.missingCoordinatesInMotion = [
+            c for c in self.coordinates if c not in self.columnLabels]
+        self.extraMotionColumns = [
+            c for c in self.columnLabels if c not in self.coordinates]
+
+        if self.missingCoordinatesInMotion:
+            preview = ', '.join(self.missingCoordinatesInMotion[:10])
+            if len(self.missingCoordinatesInMotion) > 10:
+                preview += ', ...'
+            print(
+                "Warning: Motion file is missing model coordinates "
+                f"({len(self.missingCoordinatesInMotion)}): {preview}")
+        if self.extraMotionColumns:
+            preview = ', '.join(self.extraMotionColumns[:10])
+            if len(self.extraMotionColumns) > 10:
+                preview += ', ...'
+            print(
+                "Warning: Motion file has columns not found in model "
+                f"({len(self.extraMotionColumns)}): {preview}")
             
         # Find rotational and translational coordinates.
         self.idxColumnTrLabels = [
-            self.columnLabels.index(i) for i in self.coordinates if \
+            self.columnLabels.index(i) for i in self.availableCoordinates if \
             self.coordinateSet.get(i).getMotionType() == 2]
         self.idxColumnRotLabels = [
-            self.columnLabels.index(i) for i in self.coordinates if \
+            self.columnLabels.index(i) for i in self.availableCoordinates if \
             self.coordinateSet.get(i).getMotionType() == 1]
         
         # TODO: hard coded
@@ -612,7 +636,7 @@ class kinematics:
         
         # Compute ranges of motion.        
         ROM = {}
-        for c, coord in enumerate(self.coordinates):
+        for c, coord in enumerate(self.availableCoordinates):
             ROM[coord] = {}
             ROM[coord]['min'] = self.coordinate_values[coord].min()
             ROM[coord]['max'] = self.coordinate_values[coord].max()

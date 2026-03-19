@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 import utilsKinematics
 
-subject_num = 13
+subject_num = 2
 
 # load stride times csv
 left_stride_times_file = rf'G:\Shared drives\Stanford Football\January_19\subject{subject_num}\Kinematics\Outputs\stride_times_left.csv'

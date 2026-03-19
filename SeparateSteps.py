@@ -6,15 +6,18 @@ from scipy.signal import spectrogram
 
 # Requirements to Change for each run
 #########################################################################
-subject_num = 2
-date = 'March_16'
-session_num = '8'
-type = 'run'
+subject_num = 10
+date = 'February_23'
+session_num = '6'
+type = 'fly'
 filt_freq = 10  # Hz, was 15 Hz
 ##########################################################################
 
 # %% Load data
-data_folder = rf'G:\Shared drives\Stanford Football\{date}\subject{subject_num}\Kinematics\Outputs\shank_angular_velocity_ID{subject_num}_S{session_num}_{type}_LSTM_filtered_{filt_freq}Hz.csv'
+# This folder is for non-cleaned data
+# data_folder = rf'G:\Shared drives\Stanford Football\{date}\subject{subject_num}\Kinematics\Outputs\shank_angular_velocity_ID{subject_num}_S{session_num}_{type}_LSTM_filtered_{filt_freq}Hz.csv'
+# This folder is for cleaned data shank_angular_velocity_ID10_S6_fly_LSTM_filtered_10Hz_filtered_10Hz
+data_folder = rf'G:\Shared drives\Stanford Football\{date}\subject{subject_num}\CleanedKinematics\Outputs\shank_angular_velocity_ID{subject_num}_S{session_num}_{type}_LSTM_filtered_{filt_freq}Hz_filtered_{filt_freq}Hz.csv'
 
 # Load csv file as dataframe
 df = pd.read_csv(data_folder)

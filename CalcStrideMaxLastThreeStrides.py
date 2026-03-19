@@ -8,10 +8,10 @@ from scipy.interpolate import interp1d
 
 import utilsKinematics
 
-subject = 2
-session = "S8"
-base_path = rf'G:\Shared drives\Stanford Football\March_16\subject{subject}\Kinematics\Outputs'
-type = 'run'
+subject = 10
+session = "S6"
+base_path = rf'G:\Shared drives\Stanford Football\February_23\subject{subject}\CleanedKinematics\Outputs'
+type = 'fly'
 filt_freq = 10  # Hz, was 15 Hz
 
 # Load stride times csv
@@ -184,7 +184,7 @@ axes[1, 2].grid(True)
 
 
 plt.tight_layout()
-plt.savefig(r'G:\Shared drives\Stanford Football\February_9\subject2\Kinematics\Outputs\bflh_mtu_all_strides_summary_ID2_S5_decel_LSTM_filtered.png')
+plt.savefig(r'G:\Shared drives\Stanford Football\February_23\subject10\CleanedKinematics\Outputs\bflh_mtu_all_strides_summary_ID10_S6_fly_LSTM_filtered.png')
 plt.show()
 
 print("\nPlot saved successfully!")

@@ -15,19 +15,22 @@ def butter_lowpass_filter(data, cutoff=15, fs=1000, order=4):
 
 # Requirements to Change for each run
 #######################################################################################
-date = 'March_16'
-subject_id = 'subject2'
+date = 'February_23'
+subject_id = 'subject10'
 subject_num = (subject_id.replace('subject', ''))
-type = 'run'
-session_num = '8'
-filt_freq = 10  # Hz, was 15 Hz
+type = 'fly'
+session_num = '6'
+filt_freq = 8  # Hz, was 15 Hz
 #######################################################################################
 
 data_dir = f'G:\\Shared drives\\Stanford Football'
 date_dir = f'{data_dir}\\{date}'
 subject_dir = f'{date_dir}\\{subject_id}'
 
-kinematics_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM.mot'
+# For kinematics without cleaning
+#kinematics_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM.mot'
+# For kinematics with cleaning
+kinematics_file = f'{subject_dir}\\CleanedKinematics\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM.mot'
 
 # Load the kinematics data
 mot_table = osim.TimeSeriesTable(kinematics_file)
@@ -67,7 +70,10 @@ mot_table_filtered = osim.TimeSeriesTable(time, filtered_matrix, list(column_lab
 for key in keys:
     mot_table_filtered.addTableMetaDataString(key, mot_table.getTableMetaDataString(key))
 
-output_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM_filtered_{filt_freq}Hz.mot'
+# For filtered kinematics without marker cleaning
+#output_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM_filtered_{filt_freq}Hz.mot'
+# For filtered kinematics with marker cleaning
+output_file = f'{subject_dir}\\CleanedKinematics\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM_filtered_{filt_freq}Hz.mot'
 
 # Write to file
 osim.STOFileAdapter.write(mot_table_filtered, output_file)
