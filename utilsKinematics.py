@@ -375,7 +375,7 @@ class kinematics:
                         
         # Filter.
         if lowpass_cutoff_frequency > 0:
-            lMT = lowPassFilter(self.time, lMT, lowpass_cutoff_frequency)                        
+            lMT = lowPassFilter(self.time, lMT, lowpass_cutoff_frequency, order = 6)                        
               
         # Return as DataFrame.
         data = np.concatenate(
@@ -457,6 +457,42 @@ class kinematics:
                         df[col] = signal.filtfilt(b, a, df[col].values)
 
         return df
+    
+    def get_muscle_tendon_velocity_spline_approach(
+            self,
+            lowpass_cutoff_frequency_for_lengths=-1,
+            lowpass_cutoff_frequency_for_velocities=-1):
+        """
+        Compute MTU velocities by differentiating splines of MTU lengths.
+
+        MTU lengths are first computed with get_muscle_tendon_lengths(), then
+        each muscle trajectory is fit with a cubic spline and differentiated to
+        get lengthening speed at each original time sample.
+        """
+        mtu_lengths_df = self.get_muscle_tendon_lengths(
+            lowpass_cutoff_frequency=lowpass_cutoff_frequency_for_lengths)
+
+        muscle_names = [
+            col for col in mtu_lengths_df.columns if col != 'time']
+        velocities = np.zeros((self.table.getNumRows(), len(muscle_names)))
+
+        for i, muscle_name in enumerate(muscle_names):
+            spline = interpolate.InterpolatedUnivariateSpline(
+                self.time, mtu_lengths_df[muscle_name].to_numpy(), k=3)
+            spline_d1 = spline.derivative(n=1)
+            velocities[:, i] = spline_d1(self.time)
+
+        if lowpass_cutoff_frequency_for_velocities > 0:
+            velocities = lowPassFilter(
+                self.time, velocities,
+                lowpass_cutoff_frequency_for_velocities)
+
+        data = np.concatenate(
+            (np.expand_dims(self.time, axis=1), velocities), axis=1)
+        columns = ['time'] + muscle_names
+        mtu_velocity_df = pd.DataFrame(data=data, columns=columns)
+
+        return mtu_velocity_df
 
     def get_moment_arms(self, lowpass_cutoff_frequency=-1):
         

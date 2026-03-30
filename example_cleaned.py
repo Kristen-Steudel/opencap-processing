@@ -24,6 +24,8 @@ import utilsKinematics
 from utils import download_kinematics, get_model_name_from_metadata
 from utilsPlotting import plot_dataframe
 import opensim as osim
+import pandas as pd
+import numpy as np
 
 ###### TO ADJUST
 subject_num = 10
@@ -31,6 +33,9 @@ date = 'February_23'
 session = '6'
 type = 'fly'
 filter_freq = 10
+coord_filter_freq = 10
+mtu_length_filter_freq = 10
+enable_mtu_filter_diagnostics = False
 
 ###########################################################
 # %% User inputs.
@@ -130,31 +135,107 @@ coordinates['values'], coordinates['speeds'], coordinates['accelerations'] = {},
 center_of_mass['values'], center_of_mass['speeds'], center_of_mass['accelerations'] = {}, {}, {}
 angular_velocity = {}
 muscle_tendon_velocities = {}
+muscle_tendon_velocities_opensim = {}
+muscle_tendon_velocity_comparison = {}
 normalized_muscle_tendon_lengths = {}
+muscle_tendon_lengths_raw = {}
+muscle_tendon_lengths_filter_delta = {}
+
+
+def compute_fft_band_power_ratio(time_vec, signal_vec, cutoff_hz):
+    """Return fraction of spectral power above cutoff_hz."""
+    dt = np.mean(np.diff(time_vec))
+    fs = 1.0 / dt
+    demeaned = signal_vec - np.mean(signal_vec)
+    freqs = np.fft.rfftfreq(len(demeaned), d=dt)
+    power = np.abs(np.fft.rfft(demeaned)) ** 2
+    total_power = np.sum(power)
+    if total_power <= 0:
+        return 0.0
+    high_power = np.sum(power[freqs > cutoff_hz])
+    return high_power / total_power
 
 for trial_name in trial_names:
     # Create object from class kinematics.
-    kinematics[trial_name] = utilsKinematics.kinematics(data_folder, trial_name, modelName=modelName, lowpass_cutoff_frequency_for_coordinate_values=10)
+    kinematics[trial_name] = utilsKinematics.kinematics(
+        data_folder,
+        trial_name,
+        modelName=modelName,
+        lowpass_cutoff_frequency_for_coordinate_values=coord_filter_freq)
     print(f"Loaded motion file: {kinematics[trial_name].motionPath}")
     print(f"Loaded model file:  {kinematics[trial_name].modelPath}")
     print(f"Motion rows:        {kinematics[trial_name].table.getNumRows()}")
     
     # Get coordinate values, speeds, and accelerations.
     coordinates['values'][trial_name] = kinematics[trial_name].get_coordinate_values(in_degrees=True) # already filtered
-    coordinates['speeds'][trial_name] = kinematics[trial_name].get_coordinate_speeds(in_degrees=True, lowpass_cutoff_frequency=10)
-    coordinates['accelerations'][trial_name] = kinematics[trial_name].get_coordinate_accelerations(in_degrees=True, lowpass_cutoff_frequency=10)
+    coordinates['speeds'][trial_name] = kinematics[trial_name].get_coordinate_speeds(
+        in_degrees=True, lowpass_cutoff_frequency=coord_filter_freq)
+    coordinates['accelerations'][trial_name] = kinematics[trial_name].get_coordinate_accelerations(
+        in_degrees=True, lowpass_cutoff_frequency=coord_filter_freq)
     
     # Get muscle-tendon lengths and moment arms.
-    muscle_tendon_lengths[trial_name] = kinematics[trial_name].get_muscle_tendon_lengths()
+    muscle_tendon_lengths_raw[trial_name] = (
+        kinematics[trial_name].get_muscle_tendon_lengths(
+            lowpass_cutoff_frequency=-1))
+    muscle_tendon_lengths[trial_name] = (
+        kinematics[trial_name].get_muscle_tendon_lengths(
+            lowpass_cutoff_frequency=mtu_length_filter_freq))
+    
+    # Optional filtering diagnostics for bflh_r.
+    mtu_raw = muscle_tendon_lengths_raw[trial_name]
+    mtu_filt = muscle_tendon_lengths[trial_name]
+    if enable_mtu_filter_diagnostics:
+        rms_diff_bflh_r = np.sqrt(
+            np.mean((mtu_filt['bflh_r'] - mtu_raw['bflh_r']) ** 2))
+        raw_high_power_ratio = compute_fft_band_power_ratio(
+            mtu_raw['time'].to_numpy(), mtu_raw['bflh_r'].to_numpy(), mtu_length_filter_freq)
+        filt_high_power_ratio = compute_fft_band_power_ratio(
+            mtu_filt['time'].to_numpy(), mtu_filt['bflh_r'].to_numpy(), mtu_length_filter_freq)
+        print(f"RMS diff bflh_r (filtered - raw): {rms_diff_bflh_r:.8f}")
+        print(
+            f"bflh_r power above {mtu_length_filter_freq} Hz (raw): {100 * raw_high_power_ratio:.3f}%")
+        print(
+            f"bflh_r power above {mtu_length_filter_freq} Hz (filtered): {100 * filt_high_power_ratio:.3f}%")
+
+    delta_df_dict = {'time': mtu_raw['time']}
+    for col in mtu_raw.columns:
+        if col == 'time' or col not in mtu_filt.columns:
+            continue
+        delta_df_dict[f'{col}_raw'] = mtu_raw[col]
+        delta_df_dict[f'{col}_filtered'] = mtu_filt[col]
+        delta_df_dict[f'{col}_delta_filtered_minus_raw'] = mtu_filt[col] - mtu_raw[col]
+    delta_df = pd.DataFrame(delta_df_dict)
+    muscle_tendon_lengths_filter_delta[trial_name] = delta_df
     # moment_arms[trial_name] = kinematics[trial_name].get_moment_arms()
-    muscle_tendon_velocities[trial_name] = (
+    muscle_tendon_velocities_opensim[trial_name] = (
         kinematics[trial_name].get_muscle_tendon_velocities(
             lowpass_cutoff_frequency=5))
+    muscle_tendon_velocities[trial_name] = (
+        kinematics[trial_name].get_muscle_tendon_velocity_spline_approach(
+            lowpass_cutoff_frequency_for_lengths=mtu_length_filter_freq,
+            lowpass_cutoff_frequency_for_velocities=5))
+    comparison_df_dict = {
+        'time': muscle_tendon_velocities[trial_name]['time']
+    }
+    for col in muscle_tendon_velocities[trial_name].columns:
+        if col == 'time' or col not in muscle_tendon_velocities_opensim[trial_name].columns:
+            continue
+        comparison_df_dict[f'{col}_spline'] = muscle_tendon_velocities[trial_name][col]
+        comparison_df_dict[f'{col}_opensim'] = muscle_tendon_velocities_opensim[trial_name][col]
+        comparison_df_dict[f'{col}_diff_spline_minus_opensim'] = (
+            muscle_tendon_velocities[trial_name][col] -
+            muscle_tendon_velocities_opensim[trial_name][col]
+        )
+    comparison_df = pd.DataFrame(comparison_df_dict)
+    muscle_tendon_velocity_comparison[trial_name] = comparison_df
     
     # Get center of mass values, speeds, and accelerations.
-    center_of_mass['values'][trial_name] = kinematics[trial_name].get_center_of_mass_values(lowpass_cutoff_frequency=10)
-    center_of_mass['speeds'][trial_name] = kinematics[trial_name].get_center_of_mass_speeds(lowpass_cutoff_frequency=10)
-    center_of_mass['accelerations'][trial_name] = kinematics[trial_name].get_center_of_mass_accelerations(lowpass_cutoff_frequency=10)
+    center_of_mass['values'][trial_name] = kinematics[trial_name].get_center_of_mass_values(
+        lowpass_cutoff_frequency=coord_filter_freq)
+    center_of_mass['speeds'][trial_name] = kinematics[trial_name].get_center_of_mass_speeds(
+        lowpass_cutoff_frequency=coord_filter_freq)
+    center_of_mass['accelerations'][trial_name] = kinematics[trial_name].get_center_of_mass_accelerations(
+        lowpass_cutoff_frequency=coord_filter_freq)
     
         # Get shank angular velocity (expressed in body frame, with 10 Hz lowpass filter)
     # Specify both left and right shanks
@@ -196,11 +277,35 @@ os.makedirs(output_csv_dir, exist_ok=True)
 output_csv_path = os.path.join(output_csv_dir, f'muscle_tendon_lengths_{trial_names[0]}_filtered_{filter_freq}Hz.csv')
 muscle_tendon_lengths[trial_names[0]].to_csv(output_csv_path)
 
+# %% Print as csv: muscle_tendon_lengths_raw
+output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'Outputs')
+os.makedirs(output_csv_dir, exist_ok=True)
+output_csv_path = os.path.join(output_csv_dir, f'muscle_tendon_lengths_{trial_names[0]}_raw.csv')
+muscle_tendon_lengths_raw[trial_names[0]].to_csv(output_csv_path)
+
+# %% Print as csv: muscle_tendon_lengths_filter_delta
+output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'Outputs')
+os.makedirs(output_csv_dir, exist_ok=True)
+output_csv_path = os.path.join(output_csv_dir, f'muscle_tendon_lengths_{trial_names[0]}_filter_delta_{filter_freq}Hz.csv')
+muscle_tendon_lengths_filter_delta[trial_names[0]].to_csv(output_csv_path, index=False)
+
 # %% Print as csv: muscle_tendon_velocities
 output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'Outputs')
 os.makedirs(output_csv_dir, exist_ok=True)
-output_csv_path = os.path.join(output_csv_dir, f'muscle_tendon_velocities_{trial_names[0]}_filtered_{filter_freq}Hz.csv')
+output_csv_path = os.path.join(output_csv_dir, f'muscle_tendon_velocities_spline_{trial_names[0]}_filtered_{filter_freq}Hz.csv')
 muscle_tendon_velocities[trial_names[0]].to_csv(output_csv_path)
+
+# %% Print as csv: muscle_tendon_velocities_opensim
+output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'Outputs')
+os.makedirs(output_csv_dir, exist_ok=True)
+output_csv_path = os.path.join(output_csv_dir, f'muscle_tendon_velocities_opensim_{trial_names[0]}_filtered_{filter_freq}Hz.csv')
+muscle_tendon_velocities_opensim[trial_names[0]].to_csv(output_csv_path)
+
+# %% Print as csv: muscle_tendon_velocity_comparison
+output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'Outputs')
+os.makedirs(output_csv_dir, exist_ok=True)
+output_csv_path = os.path.join(output_csv_dir, f'muscle_tendon_velocity_comparison_{trial_names[0]}_filtered_{filter_freq}Hz.csv')
+muscle_tendon_velocity_comparison[trial_names[0]].to_csv(output_csv_path, index=False)
 
 # %% Print as csv: normalized_muscle_tendon_lengths
 output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'Outputs')
