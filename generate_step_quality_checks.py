@@ -22,6 +22,7 @@ import glob
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from utilsTRC import trc_2_dict
 import utilsKinematics
 from utils import download_kinematics, get_model_name_from_metadata
 import opensim as osim
@@ -39,8 +40,8 @@ marker_filter_freq = 10  # Hz
 angular_vel_filter_freq = 2  # Hz (for step detection)
 
 # Knee/Hip marker pairs to track
-KNEE_MARKERS = ['tibia_l', 'tibia_r']
-HIP_MARKERS = ['femur_l', 'femur_r']
+KNEE_MARKERS = ['LKnee', 'RKnee']
+HIP_MARKERS = ['LHip', 'RHip']
 COORDINATES_TO_PLOT = ['knee_angle_l', 'knee_angle_r', 'hip_flexion_l', 'hip_flexion_r']
 
 # ============================================================================
@@ -189,12 +190,37 @@ for trial_name in trial_names:
         expressed_in='ground'
     )
     
-    # Get marker data
+    # Get marker data from TRC file
     try:
-        marker_data = kinematics.get_marker_dict(data_folder, trial_name, 
-                                                  lowpass_cutoff_frequency=marker_filter_freq)
+        trc_file_name = f'ID{subject_num}_S{session}_{trial_type}_LSTM.trc'
+        trc_file_path = os.path.join(
+            'G:\\Shared drives\\Stanford Football',
+            date,
+            f'subject{subject_num}',
+            'CleanedMarkerData',
+            'OpenPose_default',
+            '3-cameras',
+            'PostAugmentation_v0.2',
+            trc_file_name
+        )
+        
+        # Load TRC file using trc_2_dict function
+        marker_data_raw = trc_2_dict(trc_file_path)
+        print("Marker data loaded successfully from TRC file")
+        
+        # Interpolate marker data to kinematics time grid
+        time_data_kin = coord_values['time'].values
+        marker_time = marker_data_raw['time']
+        marker_data = {'markers': {}, 'marker_names': marker_data_raw['marker_names']}
+        
+        for marker_name, marker_positions in marker_data_raw['markers'].items():
+            # marker_positions is Nx3 array
+            interp_x = np.interp(time_data_kin, marker_time, marker_positions[:, 0])
+            interp_y = np.interp(time_data_kin, marker_time, marker_positions[:, 1])
+            interp_z = np.interp(time_data_kin, marker_time, marker_positions[:, 2])
+            marker_data['markers'][marker_name] = np.column_stack([interp_x, interp_y, interp_z])
+        
         markers_available = True
-        print("Marker data loaded successfully")
     except Exception as e:
         print(f"Warning: Could not load marker data: {e}")
         markers_available = False
@@ -265,7 +291,13 @@ for trial_name in trial_names:
     all_step_plots_data['knee_markers'] = []
     all_step_plots_data['hip_markers'] = []
     
-    for step_idx in range(len(all_step_times) - 1):
+    # Calculate total number of steps for reverse numbering
+    total_steps = len(all_step_times) - 1
+    
+    for step_idx in range(total_steps):
+        # Reverse step numbering: first step = total_steps, last step = 1
+        step_number = total_steps - step_idx
+        
         step_start_time = all_step_times[step_idx]
         step_end_time = all_step_times[step_idx + 1]
         step_side = all_step_sides[step_idx]
@@ -275,7 +307,7 @@ for trial_name in trial_names:
         step_time = time_data[step_mask]
         
         if len(step_time) < 2:
-            print(f"  Skipping step {step_idx} (too few samples)")
+            print(f"  Skipping step {step_number} (too few samples)")
             continue
         
         # Normalize time to start at 0
@@ -300,17 +332,18 @@ for trial_name in trial_names:
                         marker_positions = marker_data['markers'][marker]
                         step_markers[marker] = marker_positions[step_mask]
             except Exception as e:
-                print(f"  Warning: Could not extract marker data for step {step_idx}: {e}")
+                print(f"  Warning: Could not extract marker data for step {step_number}: {e}")
         
         # ====================================================================
-        # CREATE PER-STEP PLOT (2x3 grid)
+        # CREATE PER-STEP PLOT (2x4 grid - Knee in row 1, Hip in row 2)
         # ====================================================================
         
-        fig, axes = plt.subplots(2, 3, figsize=(15, 10))
-        fig.suptitle(f'Step {step_idx:03d} ({step_side}): {step_start_time:.3f}s - {step_end_time:.3f}s', 
+        fig, axes = plt.subplots(2, 4, figsize=(18, 10))
+        fig.suptitle(f'Step {step_number:03d} ({step_side}): {step_start_time:.3f}s - {step_end_time:.3f}s', 
                      fontsize=14, fontweight='bold')
         
-        # Panel 1: Knee flexion angle
+        # ROW 1: KNEE DATA
+        # Panel (0,0): Knee flexion angle
         ax = axes[0, 0]
         knee_angle_col = 'knee_angle_l' if 'left' in step_side else 'knee_angle_r'
         if knee_angle_col in step_coords_values:
@@ -322,36 +355,34 @@ for trial_name in trial_names:
         else:
             ax.text(0.5, 0.5, 'Data not available', ha='center', va='center')
         
-        # Panel 2: Hip flexion angle
+        # Panel (0,1): Knee marker X position
         ax = axes[0, 1]
-        hip_angle_col = 'hip_flexion_l' if 'left' in step_side else 'hip_flexion_r'
-        if hip_angle_col in step_coords_values:
-            ax.plot(step_time_norm, step_coords_values[hip_angle_col], 'r-', linewidth=2)
-            ax.set_xlabel('Time (s)', fontsize=10)
-            ax.set_ylabel('Angle (deg)', fontsize=10)
-            ax.set_title('Hip Flexion Angle', fontsize=11, fontweight='bold')
-            ax.grid(alpha=0.3)
-        else:
-            ax.text(0.5, 0.5, 'Data not available', ha='center', va='center')
-        
-        # Panel 3: Knee markers (x, y, z)
-        ax = axes[0, 2]
-        knee_marker = 'tibia_l' if 'left' in step_side else 'tibia_r'
+        knee_marker = 'LKnee' if 'left' in step_side else 'RKnee'
         if knee_marker in step_markers and len(step_markers[knee_marker]) > 0:
             knee_pos = step_markers[knee_marker]
-            ax.plot(step_time_norm, knee_pos[:, 0], 'b-', label='X', linewidth=2)
-            ax.plot(step_time_norm, knee_pos[:, 1], 'g-', label='Y', linewidth=2)
-            ax.plot(step_time_norm, knee_pos[:, 2], 'r-', label='Z', linewidth=2)
+            ax.plot(step_time_norm, knee_pos[:, 0], 'b-', linewidth=2.5)
             ax.set_xlabel('Time (s)', fontsize=10)
             ax.set_ylabel('Position (m)', fontsize=10)
-            ax.set_title('Knee Marker Position', fontsize=11, fontweight='bold')
-            ax.legend(fontsize=9)
+            ax.set_title('Knee Marker X Position', fontsize=11, fontweight='bold')
             ax.grid(alpha=0.3)
         else:
             ax.text(0.5, 0.5, 'Marker data not available', ha='center', va='center')
         
-        # Panel 4: Knee flexion velocity
-        ax = axes[1, 0]
+        # Panel (0,2): Knee marker Y position
+        ax = axes[0, 2]
+        knee_marker = 'LKnee' if 'left' in step_side else 'RKnee'
+        if knee_marker in step_markers and len(step_markers[knee_marker]) > 0:
+            knee_pos = step_markers[knee_marker]
+            ax.plot(step_time_norm, knee_pos[:, 1], 'g-', linewidth=2.5)
+            ax.set_xlabel('Time (s)', fontsize=10)
+            ax.set_ylabel('Position (m)', fontsize=10)
+            ax.set_title('Knee Marker Y Position', fontsize=11, fontweight='bold')
+            ax.grid(alpha=0.3)
+        else:
+            ax.text(0.5, 0.5, 'Marker data not available', ha='center', va='center')
+        
+        # Panel (0,3): Knee flexion velocity
+        ax = axes[0, 3]
         knee_vel_col = 'knee_angle_l' if 'left' in step_side else 'knee_angle_r'
         if knee_vel_col in step_coords_speeds:
             ax.plot(step_time_norm, step_coords_speeds[knee_vel_col], 'b-', linewidth=2)
@@ -362,8 +393,47 @@ for trial_name in trial_names:
         else:
             ax.text(0.5, 0.5, 'Data not available', ha='center', va='center')
         
-        # Panel 5: Hip flexion velocity
+        # ROW 2: HIP DATA
+        # Panel (1,0): Hip flexion angle
+        ax = axes[1, 0]
+        hip_angle_col = 'hip_flexion_l' if 'left' in step_side else 'hip_flexion_r'
+        if hip_angle_col in step_coords_values:
+            ax.plot(step_time_norm, step_coords_values[hip_angle_col], 'r-', linewidth=2)
+            ax.set_xlabel('Time (s)', fontsize=10)
+            ax.set_ylabel('Angle (deg)', fontsize=10)
+            ax.set_title('Hip Flexion Angle', fontsize=11, fontweight='bold')
+            ax.grid(alpha=0.3)
+        else:
+            ax.text(0.5, 0.5, 'Data not available', ha='center', va='center')
+        
+        # Panel (1,1): Hip marker X position
         ax = axes[1, 1]
+        hip_marker = 'LHip' if 'left' in step_side else 'RHip'
+        if hip_marker in step_markers and len(step_markers[hip_marker]) > 0:
+            hip_pos = step_markers[hip_marker]
+            ax.plot(step_time_norm, hip_pos[:, 0], 'b-', linewidth=2.5)
+            ax.set_xlabel('Time (s)', fontsize=10)
+            ax.set_ylabel('Position (m)', fontsize=10)
+            ax.set_title('Hip Marker X Position', fontsize=11, fontweight='bold')
+            ax.grid(alpha=0.3)
+        else:
+            ax.text(0.5, 0.5, 'Marker data not available', ha='center', va='center')
+        
+        # Panel (1,2): Hip marker Y position
+        ax = axes[1, 2]
+        hip_marker = 'LHip' if 'left' in step_side else 'RHip'
+        if hip_marker in step_markers and len(step_markers[hip_marker]) > 0:
+            hip_pos = step_markers[hip_marker]
+            ax.plot(step_time_norm, hip_pos[:, 1], 'g-', linewidth=2.5)
+            ax.set_xlabel('Time (s)', fontsize=10)
+            ax.set_ylabel('Position (m)', fontsize=10)
+            ax.set_title('Hip Marker Y Position', fontsize=11, fontweight='bold')
+            ax.grid(alpha=0.3)
+        else:
+            ax.text(0.5, 0.5, 'Marker data not available', ha='center', va='center')
+        
+        # Panel (1,3): Hip flexion velocity
+        ax = axes[1, 3]
         hip_vel_col = 'hip_flexion_l' if 'left' in step_side else 'hip_flexion_r'
         if hip_vel_col in step_coords_speeds:
             ax.plot(step_time_norm, step_coords_speeds[hip_vel_col], 'r-', linewidth=2)
@@ -374,31 +444,15 @@ for trial_name in trial_names:
         else:
             ax.text(0.5, 0.5, 'Data not available', ha='center', va='center')
         
-        # Panel 6: Hip markers (x, y, z)
-        ax = axes[1, 2]
-        hip_marker = 'femur_l' if 'left' in step_side else 'femur_r'
-        if hip_marker in step_markers and len(step_markers[hip_marker]) > 0:
-            hip_pos = step_markers[hip_marker]
-            ax.plot(step_time_norm, hip_pos[:, 0], 'b-', label='X', linewidth=2)
-            ax.plot(step_time_norm, hip_pos[:, 1], 'g-', label='Y', linewidth=2)
-            ax.plot(step_time_norm, hip_pos[:, 2], 'r-', label='Z', linewidth=2)
-            ax.set_xlabel('Time (s)', fontsize=10)
-            ax.set_ylabel('Position (m)', fontsize=10)
-            ax.set_title('Hip Marker Position', fontsize=11, fontweight='bold')
-            ax.legend(fontsize=9)
-            ax.grid(alpha=0.3)
-        else:
-            ax.text(0.5, 0.5, 'Marker data not available', ha='center', va='center')
-        
         plt.tight_layout()
         
         # Save plot
-        plot_filename = f'step_{step_idx:03d}_{step_side}.png'
+        plot_filename = f'step_{step_number:03d}_{step_side}.png'
         plot_path = os.path.join(plots_dir, plot_filename)
         plt.savefig(plot_path, dpi=300, bbox_inches='tight')
         plt.close()
         
-        print(f"  Saved step {step_idx:03d} plot")
+        print(f"  Saved step {step_number:03d} plot")
     
     # ========================================================================
     # CREATE COMBINED COMPARISON PLOT
@@ -406,13 +460,19 @@ for trial_name in trial_names:
     
     print("\nGenerating combined comparison plot...")
     
+    # Determine which step indices correspond to steps 1-6 in reverse numbering
+    # In reverse numbering: step 1 = last step (idx=total_steps-1), step 6 = idx=(total_steps-6)
+    start_idx = max(0, total_steps - 6)
+    end_idx = total_steps
+    
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-    fig.suptitle(f'Step Comparison - All Steps\nTrial: {trial_name}', 
+    fig.suptitle(f'Step Comparison - Steps 1-6 (Reverse Numbering)\nTrial: {trial_name}', 
                  fontsize=14, fontweight='bold')
     
-    # Panel 1: Knee flexion angle - all steps
+    # Panel 1: Knee flexion angle - steps 1-6 reverse
     ax = axes[0, 0]
-    for step_idx in range(len(all_step_times) - 1):
+    for step_idx in range(start_idx, end_idx):
+        step_number = total_steps - step_idx
         step_start_time = all_step_times[step_idx]
         step_end_time = all_step_times[step_idx + 1]
         step_side = all_step_sides[step_idx]
@@ -424,17 +484,18 @@ for trial_name in trial_names:
         if knee_angle_col in coord_values.columns:
             values = coord_values[step_mask][knee_angle_col].values
             color = 'blue' if 'left' in step_side else 'red'
-            ax.plot(step_time_norm, values, color=color, alpha=0.5, linewidth=1.5)
+            ax.plot(step_time_norm, values, color=color, alpha=0.5, linewidth=1.5, label=f'Step {step_number}')
     
     ax.set_xlabel('Normalized Time (0-1)', fontsize=10)
     ax.set_ylabel('Angle (deg)', fontsize=10)
-    ax.set_title('Knee Flexion Angle - All Steps', fontsize=11, fontweight='bold')
+    ax.set_title('Knee Flexion Angle - Steps 1-6', fontsize=11, fontweight='bold')
     ax.grid(alpha=0.3)
-    ax.legend(['Left steps', 'Right steps'], fontsize=9)
+    ax.legend(fontsize=8)
     
-    # Panel 2: Hip flexion angle - all steps
+    # Panel 2: Hip flexion angle - steps 1-6 reverse
     ax = axes[0, 1]
-    for step_idx in range(len(all_step_times) - 1):
+    for step_idx in range(start_idx, end_idx):
+        step_number = total_steps - step_idx
         step_start_time = all_step_times[step_idx]
         step_end_time = all_step_times[step_idx + 1]
         step_side = all_step_sides[step_idx]
@@ -446,16 +507,18 @@ for trial_name in trial_names:
         if hip_angle_col in coord_values.columns:
             values = coord_values[step_mask][hip_angle_col].values
             color = 'blue' if 'left' in step_side else 'red'
-            ax.plot(step_time_norm, values, color=color, alpha=0.5, linewidth=1.5)
+            ax.plot(step_time_norm, values, color=color, alpha=0.5, linewidth=1.5, label=f'Step {step_number}')
     
     ax.set_xlabel('Normalized Time (0-1)', fontsize=10)
     ax.set_ylabel('Angle (deg)', fontsize=10)
-    ax.set_title('Hip Flexion Angle - All Steps', fontsize=11, fontweight='bold')
+    ax.set_title('Hip Flexion Angle - Steps 1-6', fontsize=11, fontweight='bold')
     ax.grid(alpha=0.3)
+    ax.legend(fontsize=8)
     
-    # Panel 3: Knee flexion velocity - all steps
+    # Panel 3: Knee flexion velocity - steps 1-6 reverse
     ax = axes[1, 0]
-    for step_idx in range(len(all_step_times) - 1):
+    for step_idx in range(start_idx, end_idx):
+        step_number = total_steps - step_idx
         step_start_time = all_step_times[step_idx]
         step_end_time = all_step_times[step_idx + 1]
         step_side = all_step_sides[step_idx]
@@ -467,16 +530,18 @@ for trial_name in trial_names:
         if knee_angle_col in coord_speeds.columns:
             values = coord_speeds[step_mask][knee_angle_col].values
             color = 'blue' if 'left' in step_side else 'red'
-            ax.plot(step_time_norm, values, color=color, alpha=0.5, linewidth=1.5)
+            ax.plot(step_time_norm, values, color=color, alpha=0.5, linewidth=1.5, label=f'Step {step_number}')
     
     ax.set_xlabel('Normalized Time (0-1)', fontsize=10)
     ax.set_ylabel('Velocity (deg/s)', fontsize=10)
-    ax.set_title('Knee Flexion Velocity - All Steps', fontsize=11, fontweight='bold')
+    ax.set_title('Knee Flexion Velocity - Steps 1-6', fontsize=11, fontweight='bold')
     ax.grid(alpha=0.3)
+    ax.legend(fontsize=8)
     
-    # Panel 4: Hip flexion velocity - all steps
+    # Panel 4: Hip flexion velocity - steps 1-6 reverse
     ax = axes[1, 1]
-    for step_idx in range(len(all_step_times) - 1):
+    for step_idx in range(start_idx, end_idx):
+        step_number = total_steps - step_idx
         step_start_time = all_step_times[step_idx]
         step_end_time = all_step_times[step_idx + 1]
         step_side = all_step_sides[step_idx]
@@ -488,21 +553,116 @@ for trial_name in trial_names:
         if hip_angle_col in coord_speeds.columns:
             values = coord_speeds[step_mask][hip_angle_col].values
             color = 'blue' if 'left' in step_side else 'red'
-            ax.plot(step_time_norm, values, color=color, alpha=0.5, linewidth=1.5)
+            ax.plot(step_time_norm, values, color=color, alpha=0.5, linewidth=1.5, label=f'Step {step_number}')
     
     ax.set_xlabel('Normalized Time (0-1)', fontsize=10)
     ax.set_ylabel('Velocity (deg/s)', fontsize=10)
-    ax.set_title('Hip Flexion Velocity - All Steps', fontsize=11, fontweight='bold')
+    ax.set_title('Hip Flexion Velocity - Steps 1-6', fontsize=11, fontweight='bold')
     ax.grid(alpha=0.3)
+    ax.legend(fontsize=8)
     
     plt.tight_layout()
     
     # Save combined comparison plot
-    comparison_plot_path = os.path.join(trial_output_dir, 'step_comparison_all_steps.png')
+    comparison_plot_path = os.path.join(trial_output_dir, 'step_comparison_steps_1_to_6.png')
     plt.savefig(comparison_plot_path, dpi=300, bbox_inches='tight')
     plt.close()
     
-    print(f"Saved combined comparison plot: {comparison_plot_path}")
+    print(f"Saved comparison plot for steps 1-6: {comparison_plot_path}")
+    
+    # ========================================================================
+    # CREATE MEAN TRAJECTORY PLOT FOR STEPS 1-6
+    # ========================================================================
+    
+    print("\nGenerating mean trajectory plot...")
+    
+    # Collect data for all 6 steps and normalize time
+    knee_angle_trajectories = []
+    hip_angle_trajectories = []
+    normalized_time_common = np.linspace(0, 1, 100)  # Common normalized time grid
+    
+    for step_idx in range(start_idx, end_idx):
+        step_start_time = all_step_times[step_idx]
+        step_end_time = all_step_times[step_idx + 1]
+        step_side = all_step_sides[step_idx]
+        step_mask = (time_data >= step_start_time) & (time_data < step_end_time)
+        step_time = time_data[step_mask]
+        
+        if len(step_time) < 2:
+            continue
+            
+        step_time_norm = (step_time - step_start_time) / (step_end_time - step_start_time)
+        
+        # Get knee angle for this step
+        knee_angle_col = 'knee_angle_l' if 'left' in step_side else 'knee_angle_r'
+        if knee_angle_col in coord_values.columns:
+            knee_values = coord_values[step_mask][knee_angle_col].values
+            # Interpolate to common time grid
+            if len(knee_values) > 1:
+                interp_knee = np.interp(normalized_time_common, step_time_norm, knee_values)
+                knee_angle_trajectories.append(interp_knee)
+        
+        # Get hip angle for this step
+        hip_angle_col = 'hip_flexion_l' if 'left' in step_side else 'hip_flexion_r'
+        if hip_angle_col in coord_values.columns:
+            hip_values = coord_values[step_mask][hip_angle_col].values
+            # Interpolate to common time grid
+            if len(hip_values) > 1:
+                interp_hip = np.interp(normalized_time_common, step_time_norm, hip_values)
+                hip_angle_trajectories.append(interp_hip)
+    
+    # Calculate mean trajectories
+    if knee_angle_trajectories:
+        mean_knee = np.mean(knee_angle_trajectories, axis=0)
+        std_knee = np.std(knee_angle_trajectories, axis=0)
+    else:
+        mean_knee = None
+        std_knee = None
+        
+    if hip_angle_trajectories:
+        mean_hip = np.mean(hip_angle_trajectories, axis=0)
+        std_hip = np.std(hip_angle_trajectories, axis=0)
+    else:
+        mean_hip = None
+        std_hip = None
+    
+    # Create mean trajectory plot
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    fig.suptitle(f'Mean Trajectories - Steps 1-6\nTrial: {trial_name}', 
+                 fontsize=14, fontweight='bold')
+    
+    # Panel 1: Mean knee flexion angle
+    ax = axes[0]
+    if mean_knee is not None:
+        ax.plot(normalized_time_common, mean_knee, 'b-', linewidth=2.5, label='Mean')
+        ax.fill_between(normalized_time_common, mean_knee - std_knee, mean_knee + std_knee, 
+                         alpha=0.2, color='blue', label='±1 Std Dev')
+    ax.set_xlabel('Normalized Time (0-1)', fontsize=11)
+    ax.set_ylabel('Angle (deg)', fontsize=11)
+    ax.set_title('Mean Knee Flexion Angle', fontsize=12, fontweight='bold')
+    ax.grid(alpha=0.3)
+    ax.legend(fontsize=10)
+    
+    # Panel 2: Mean hip flexion angle
+    ax = axes[1]
+    if mean_hip is not None:
+        ax.plot(normalized_time_common, mean_hip, 'r-', linewidth=2.5, label='Mean')
+        ax.fill_between(normalized_time_common, mean_hip - std_hip, mean_hip + std_hip, 
+                         alpha=0.2, color='red', label='±1 Std Dev')
+    ax.set_xlabel('Normalized Time (0-1)', fontsize=11)
+    ax.set_ylabel('Angle (deg)', fontsize=11)
+    ax.set_title('Mean Hip Flexion Angle', fontsize=12, fontweight='bold')
+    ax.grid(alpha=0.3)
+    ax.legend(fontsize=10)
+    
+    plt.tight_layout()
+    
+    # Save mean trajectory plot
+    mean_trajectory_path = os.path.join(trial_output_dir, 'step_mean_trajectories_1_to_6.png')
+    plt.savefig(mean_trajectory_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    print(f"Saved mean trajectory plot: {mean_trajectory_path}")
     
     # ========================================================================
     # SAVE SUMMARY STATISTICS
