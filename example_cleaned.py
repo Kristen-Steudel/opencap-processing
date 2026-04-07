@@ -28,27 +28,32 @@ import pandas as pd
 import numpy as np
 
 ###### TO ADJUST
-subject_num = 10
-date = 'February_23'
-session = '6'
-type = 'fly'
-filter_freq = 10
+subject_num = 2
+date = 'March_2'
+session = '7'
+type = 'sprint'
+filter_freq = 15 # was 10 Hz for kinematics, I have 15 Hz for post aug markers
 coord_filter_freq = 10
-mtu_length_filter_freq = 10
+mtu_length_filter_freq = 5 # This was 10 Hz, I am testing out 5 Hz on MTU filter freq
 enable_mtu_filter_diagnostics = False
 
 ###########################################################
 # %% User inputs.
 
-session_id = os.path.normpath(f'G:\\Shared drives\\Stanford Football\\{date}\\subject{subject_num}\\CleanedKinematics\\OpenPose_default\\3-cameras\\Kinematics')
+# Normal session id
+#session_id = os.path.normpath(f'G:\\Shared drives\\Stanford Football\\{date}\\subject{subject_num}\\CleanedKinematics\\OpenPose_default\\3-cameras\\Kinematics')
+
+# test session id for filtering post marker augmentation
+session_id = os.path.normpath(f'G:\\Shared drives\\Stanford Football\\{date}\\subject{subject_num}\\CleanedKinematics\\filtered_post_augmentation')
 
 
 # Specify trial names in a list; use None to process all trials in a session.
-specific_trial_names = [f'ID{subject_num}_S{session}_{type}_LSTM_filtered_{filter_freq}Hz'] #'ACCEL_LSTM', 'DECEL_LSTM']
+#specific_trial_names = [f'ID{subject_num}_S{session}_{type}_LSTM_filt{filter_freq}Hz'] #'ACCEL_LSTM', 'DECEL_LSTM']
+specific_trial_names = [f'ID{subject_num}_S{session}_{type}_LSTM_filtpostaug15Hz_filteredkinematics_15Hz'] #'ACCEL_LSTM', 'DECEL_LSTM']
 print(specific_trial_names)
 
 # Specify where to download the data.
-data_folder = os.path.join(session_id)
+data_folder = os.path.join(session_id, 'FiltPostAug')
 
 # %% Prepare data (local or remote).
 if os.path.exists(session_id):
@@ -260,61 +265,62 @@ for muscle_name, length in neutral_mtu_lengths.items():
         print(f"{muscle_name}: {length:.4f} m")
     
 # %% Print as csv: example.
-output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'Outputs')
+# Remove the filtered_post_augmentation for not filtering post augmentation and saving to a diff folder 
+output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'filtered_post_augmentation', 'Outputs')
 os.makedirs(output_csv_dir, exist_ok=True)
 output_csv_path = os.path.join(output_csv_dir, f'coordinate_speeds_{trial_names[0]}_filtered_{filter_freq}Hz.csv')
 coordinates['speeds'][trial_names[0]].to_csv(output_csv_path)
 
 # %% Print as csv: center_of_mass_speeds
-output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'Outputs')
+output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'filtered_post_augmentation', 'Outputs')
 os.makedirs(output_csv_dir, exist_ok=True)
 output_csv_path = os.path.join(output_csv_dir, f'shank_angular_velocity_{trial_names[0]}_filtered_{filter_freq}Hz.csv')
 angular_velocity[trial_names[0]].to_csv(output_csv_path)
 
 # %% Print as csv: example.
-output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'Outputs')
+output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'filtered_post_augmentation', 'Outputs')
 os.makedirs(output_csv_dir, exist_ok=True)
 output_csv_path = os.path.join(output_csv_dir, f'muscle_tendon_lengths_{trial_names[0]}_filtered_{filter_freq}Hz.csv')
 muscle_tendon_lengths[trial_names[0]].to_csv(output_csv_path)
 
 # %% Print as csv: muscle_tendon_lengths_raw
-output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'Outputs')
+output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'filtered_post_augmentation', 'Outputs')
 os.makedirs(output_csv_dir, exist_ok=True)
 output_csv_path = os.path.join(output_csv_dir, f'muscle_tendon_lengths_{trial_names[0]}_raw.csv')
 muscle_tendon_lengths_raw[trial_names[0]].to_csv(output_csv_path)
 
 # %% Print as csv: muscle_tendon_lengths_filter_delta
-output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'Outputs')
+output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'filtered_post_augmentation', 'Outputs')
 os.makedirs(output_csv_dir, exist_ok=True)
 output_csv_path = os.path.join(output_csv_dir, f'muscle_tendon_lengths_{trial_names[0]}_filter_delta_{filter_freq}Hz.csv')
 muscle_tendon_lengths_filter_delta[trial_names[0]].to_csv(output_csv_path, index=False)
 
 # %% Print as csv: muscle_tendon_velocities
-output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'Outputs')
+output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'filtered_post_augmentation', 'Outputs')
 os.makedirs(output_csv_dir, exist_ok=True)
 output_csv_path = os.path.join(output_csv_dir, f'muscle_tendon_velocities_spline_{trial_names[0]}_filtered_{filter_freq}Hz.csv')
 muscle_tendon_velocities[trial_names[0]].to_csv(output_csv_path)
 
 # %% Print as csv: muscle_tendon_velocities_opensim
-output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'Outputs')
+output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'filtered_post_augmentation', 'Outputs')
 os.makedirs(output_csv_dir, exist_ok=True)
 output_csv_path = os.path.join(output_csv_dir, f'muscle_tendon_velocities_opensim_{trial_names[0]}_filtered_{filter_freq}Hz.csv')
 muscle_tendon_velocities_opensim[trial_names[0]].to_csv(output_csv_path)
 
 # %% Print as csv: muscle_tendon_velocity_comparison
-output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'Outputs')
+output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'filtered_post_augmentation', 'Outputs')
 os.makedirs(output_csv_dir, exist_ok=True)
 output_csv_path = os.path.join(output_csv_dir, f'muscle_tendon_velocity_comparison_{trial_names[0]}_filtered_{filter_freq}Hz.csv')
 muscle_tendon_velocity_comparison[trial_names[0]].to_csv(output_csv_path, index=False)
 
 # %% Print as csv: normalized_muscle_tendon_lengths
-output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'Outputs')
+output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'filtered_post_augmentation', 'Outputs')
 os.makedirs(output_csv_dir, exist_ok=True)
 output_csv_path = os.path.join(output_csv_dir, f'normalized_muscle_tendon_lengths_{trial_names[0]}_filtered_{filter_freq}Hz.csv')
 normalized_muscle_tendon_lengths[trial_names[0]].to_csv(output_csv_path)
 
 # %% Print as csv: normalized_bflh_length
-output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'Outputs')
+output_csv_dir = os.path.join(data_folder, 'CleanedKinematics', 'filtered_post_augmentation', 'Outputs')
 os.makedirs(output_csv_dir, exist_ok=True)
 output_csv_path = os.path.join(output_csv_dir, f'normalized_bflh_length_{trial_names[0]}_filtered_{filter_freq}Hz.csv')
 bflh_columns = [

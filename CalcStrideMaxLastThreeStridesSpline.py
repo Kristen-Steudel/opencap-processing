@@ -197,7 +197,8 @@ for plot_idx, stride_idx in enumerate(left_stride_indices):
         stride_percent = np.linspace(0, 100, len(stride_df))
         interp_func = interp1d(stride_percent, stride_df['bflh_l'], kind='linear', fill_value='extrapolate')
         normalized_length = interp_func(normalized_x)
-        axes[0, 0].plot(normalized_x, normalized_length, color=left_colors[plot_idx], label=f'Stride {stride_idx + 1}', linewidth=2)
+        stride_number = n_left_strides - stride_idx
+        axes[0, 0].plot(normalized_x, normalized_length, color=left_colors[plot_idx], label=f'Stride {stride_number}', linewidth=2)
         max_idx = np.argmax(normalized_length)
         axes[0, 0].plot(normalized_x[max_idx], normalized_length[max_idx], 'o', color=left_colors[plot_idx], markersize=8, markeredgecolor='black', markeredgewidth=1.5)
 
@@ -217,7 +218,8 @@ for plot_idx, stride_idx in enumerate(right_stride_indices):
         stride_percent = np.linspace(0, 100, len(stride_df))
         interp_func = interp1d(stride_percent, stride_df['bflh_r'], kind='linear', fill_value='extrapolate')
         normalized_length = interp_func(normalized_x)
-        axes[0, 1].plot(normalized_x, normalized_length, color=right_colors[plot_idx], label=f'Stride {stride_idx + 1}', linewidth=2)
+        stride_number = n_right_strides - stride_idx
+        axes[0, 1].plot(normalized_x, normalized_length, color=right_colors[plot_idx], label=f'Stride {stride_number}', linewidth=2)
         max_idx = np.argmax(normalized_length)
         axes[0, 1].plot(normalized_x[max_idx], normalized_length[max_idx], 'o', color=right_colors[plot_idx], markersize=8, markeredgecolor='black', markeredgewidth=1.5)
 
@@ -237,7 +239,8 @@ for plot_idx, stride_idx in enumerate(left_stride_indices):
         stride_percent = np.linspace(0, 100, len(stride_df))
         interp_func = interp1d(stride_percent, stride_df['bflh_l'], kind='linear', fill_value='extrapolate')
         normalized_velocity = interp_func(normalized_x)
-        axes[1, 0].plot(normalized_x, normalized_velocity, color=left_colors[plot_idx], label=f'Stride {stride_idx + 1}', linewidth=2)
+        stride_number = n_left_strides - stride_idx
+        axes[1, 0].plot(normalized_x, normalized_velocity, color=left_colors[plot_idx], label=f'Stride {stride_number}', linewidth=2)
         max_idx = np.argmax(normalized_velocity)
         axes[1, 0].plot(normalized_x[max_idx], normalized_velocity[max_idx], 'o', color=left_colors[plot_idx], markersize=8, markeredgecolor='black', markeredgewidth=1.5)
 
@@ -257,7 +260,8 @@ for plot_idx, stride_idx in enumerate(right_stride_indices):
         stride_percent = np.linspace(0, 100, len(stride_df))
         interp_func = interp1d(stride_percent, stride_df['bflh_r'], kind='linear', fill_value='extrapolate')
         normalized_velocity = interp_func(normalized_x)
-        axes[1, 1].plot(normalized_x, normalized_velocity, color=right_colors[plot_idx], label=f'Stride {stride_idx + 1}', linewidth=2)
+        stride_number = n_right_strides - stride_idx
+        axes[1, 1].plot(normalized_x, normalized_velocity, color=right_colors[plot_idx], label=f'Stride {stride_number}', linewidth=2)
         max_idx = np.argmax(normalized_velocity)
         axes[1, 1].plot(normalized_x[max_idx], normalized_velocity[max_idx], 'o', color=right_colors[plot_idx], markersize=8, markeredgecolor='black', markeredgewidth=1.5)
 

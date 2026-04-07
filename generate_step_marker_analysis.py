@@ -30,7 +30,7 @@ subject_num = 10
 date = 'February_23'
 session = '6'
 trial_type = 'fly'
-filter_freq = 10  # Hz
+filter_freq = 15  # Hz was 10 for normal data filter on the kinematics
 coord_filter_freq = 10  # Hz
 marker_filter_freq = 10  # Hz
 angular_vel_filter_freq = 2  # Hz (for step detection)
@@ -43,11 +43,21 @@ HIP_MARKERS = ['LHip', 'RHip']
 # SETUP AND DATA LOADING
 # ============================================================================
 
+# For normal data
+# session_id = os.path.normpath(
+#     f'G:\\Shared drives\\Stanford Football\\{date}\\subject{subject_num}\\CleanedKinematics\\OpenPose_default\\3-cameras\\Kinematics'
+# )
+
+# specific_trial_names = [f'ID{subject_num}_S{session}_{trial_type}_LSTM_filtered_{filter_freq}Hz']
+
+
+# For testing filtering markers post augmentation
 session_id = os.path.normpath(
-    f'G:\\Shared drives\\Stanford Football\\{date}\\subject{subject_num}\\CleanedKinematics\\OpenPose_default\\3-cameras\\Kinematics'
+    f'G:\\Shared drives\\Stanford Football\\{date}\\subject{subject_num}\\CleanedKinematics\\filtered_post_augmentation\\'
 )
 
-specific_trial_names = [f'ID{subject_num}_S{session}_{trial_type}_LSTM_filtered_{filter_freq}Hz']
+specific_trial_names = [f'ID{subject_num}_S{session}_{trial_type}_LSTM_filt{filter_freq}Hz']
+
 
 # Determine data folder and find model
 if os.path.exists(session_id):

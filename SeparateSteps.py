@@ -6,10 +6,10 @@ from scipy.signal import spectrogram
 
 # Requirements to Change for each run
 #########################################################################
-subject_num = 10
-date = 'February_23'
-session_num = '6'
-type = 'fly'
+subject_num = 2
+date = 'March_2'
+session_num = '7'
+type = 'sprint'
 filt_freq = 10  # Hz, was 15 Hz
 ##########################################################################
 
@@ -17,8 +17,9 @@ filt_freq = 10  # Hz, was 15 Hz
 # This folder is for non-cleaned data
 # data_folder = rf'G:\Shared drives\Stanford Football\{date}\subject{subject_num}\Kinematics\Outputs\shank_angular_velocity_ID{subject_num}_S{session_num}_{type}_LSTM_filtered_{filt_freq}Hz.csv'
 # This folder is for cleaned data shank_angular_velocity_ID10_S6_fly_LSTM_filtered_10Hz_filtered_10Hz
-data_folder = rf'G:\Shared drives\Stanford Football\{date}\subject{subject_num}\CleanedKinematics\Outputs\shank_angular_velocity_ID{subject_num}_S{session_num}_{type}_LSTM_filtered_{filt_freq}Hz_filtered_{filt_freq}Hz.csv'
+#data_folder = rf'G:\Shared drives\Stanford Football\{date}\subject{subject_num}\CleanedKinematics\filtered_post_augmentation\Outputs\shank_angular_velocity_ID{subject_num}_S{session_num}_{type}_LSTM_filtered_{filt_freq}Hz_filtered_{filt_freq}Hz.csv'
 
+data_folder = rf'G:\Shared drives\Stanford Football\{date}\subject{subject_num}\CleanedKinematics\filtered_post_augmentation\Outputs\shank_angular_velocity_ID{subject_num}_S{session_num}_{type}_LSTM_filtpostaug15Hz_filteredkinematics_15Hz_filtered_15Hz.csv'
 # Load csv file as dataframe
 df = pd.read_csv(data_folder)
 
@@ -75,43 +76,43 @@ right_crossing_times, right_crossing_indices = find_negative_zero_crossings(
 print(f"Found {len(left_crossing_times)} negative-going zero crossings for left shank")
 print(f"Found {len(right_crossing_times)} negative-going zero crossings for right shank")
 
-# %% Combine and sort all stride times
-all_stride_times = np.concatenate([left_crossing_times, right_crossing_times])
-all_stride_sides = ['left'] * len(left_crossing_times) + ['right'] * len(right_crossing_times)
+# %% Combine and sort all step times
+all_step_times = np.concatenate([left_crossing_times, right_crossing_times])
+all_step_sides = ['left'] * len(left_crossing_times) + ['right'] * len(right_crossing_times)
 
 # Sort by time
-sort_indices = np.argsort(all_stride_times)
-all_stride_times_sorted = all_stride_times[sort_indices]
-all_stride_sides_sorted = [all_stride_sides[i] for i in sort_indices]
+sort_indices = np.argsort(all_step_times)
+all_step_times_sorted = all_step_times[sort_indices]
+all_step_sides_sorted = [all_step_sides[i] for i in sort_indices]
 
 # Create dataframe
-stride_times_df = pd.DataFrame({
-    'time': all_stride_times_sorted,
-    'side': all_stride_sides_sorted
+step_times_df = pd.DataFrame({
+    'time': all_step_times_sorted,
+    'side': all_step_sides_sorted
 })
 
 # Also create separate dataframes for left and right
-left_stride_times_df = pd.DataFrame({
+left_step_times_df = pd.DataFrame({
     'time': left_crossing_times,
     'side': 'left'
 })
 
-right_stride_times_df = pd.DataFrame({
+right_step_times_df = pd.DataFrame({
     'time': right_crossing_times,
     'side': 'right'
 })
 
 # %% Save to CSV
 output_dir = os.path.dirname(data_folder)
-output_path = os.path.join(output_dir, 'stride_times.csv')
-output_path_left = os.path.join(output_dir, 'stride_times_left.csv')
-output_path_right = os.path.join(output_dir, 'stride_times_right.csv')
+output_path = os.path.join(output_dir, 'step_times.csv')
+output_path_left = os.path.join(output_dir, 'step_times_left.csv')
+output_path_right = os.path.join(output_dir, 'step_times_right.csv')
 
-stride_times_df.to_csv(output_path, index=False)
-left_stride_times_df.to_csv(output_path_left, index=False)
-right_stride_times_df.to_csv(output_path_right, index=False)
+step_times_df.to_csv(output_path, index=False)
+left_step_times_df.to_csv(output_path_left, index=False)
+right_step_times_df.to_csv(output_path_right, index=False)
 
-print(f"\nStride times saved to:")
+print(f"\nstep times saved to:")
 print(f"  All: {output_path}")
 print(f"  Left: {output_path_left}")
 print(f"  Right: {output_path_right}")
@@ -142,24 +143,24 @@ plt.grid(alpha=0.3)
 plt.tight_layout()
 
 # Save plot
-plot_path = os.path.join(output_dir, 'stride_times_visualization.png')
+plot_path = os.path.join(output_dir, 'step_times_visualization.png')
 plt.savefig(plot_path, dpi=300)
 print(f"\nPlot saved to: {plot_path}")
 plt.show()
 
 # %% Print summary statistics
 print("\n" + "="*60)
-print("STRIDE DETECTION SUMMARY")
+print("step DETECTION SUMMARY")
 print("="*60)
-print(f"Left shank strides:  {len(left_crossing_times)}")
-print(f"Right shank strides: {len(right_crossing_times)}")
-print(f"Total strides:       {len(all_stride_times_sorted)}")
-print("\nFirst 5 stride times (combined):")
-print(stride_times_df.head())
-if len(stride_times_df) > 1:
-    stride_intervals = np.diff(all_stride_times_sorted)
-    print(f"\nMean stride interval: {np.mean(stride_intervals):.3f} s")
-    print(f"Std stride interval:  {np.std(stride_intervals):.3f} s")
+print(f"Left shank steps:  {len(left_crossing_times)}")
+print(f"Right shank steps: {len(right_crossing_times)}")
+print(f"Total steps:       {len(all_step_times_sorted)}")
+print("\nFirst 5 step times (combined):")
+print(step_times_df.head())
+if len(step_times_df) > 1:
+    step_intervals = np.diff(all_step_times_sorted)
+    print(f"\nMean step interval: {np.mean(step_intervals):.3f} s")
+    print(f"Std step interval:  {np.std(step_intervals):.3f} s")
 print("="*60)
 
 fs = 120

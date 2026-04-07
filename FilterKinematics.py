@@ -15,12 +15,12 @@ def butter_lowpass_filter(data, cutoff=15, fs=1000, order=4):
 
 # Requirements to Change for each run
 #######################################################################################
-date = 'February_23'
-subject_id = 'subject10'
+date = 'March_2'
+subject_id = 'subject2'
 subject_num = (subject_id.replace('subject', ''))
-type = 'fly'
-session_num = '6'
-filt_freq = 8  # Hz, was 15 Hz
+type = 'sprint'
+session_num = '7'
+filt_freq = 15  # Hz, was 15 Hz
 #######################################################################################
 
 data_dir = f'G:\\Shared drives\\Stanford Football'
@@ -30,7 +30,7 @@ subject_dir = f'{date_dir}\\{subject_id}'
 # For kinematics without cleaning
 #kinematics_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM.mot'
 # For kinematics with cleaning
-kinematics_file = f'{subject_dir}\\CleanedKinematics\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM.mot'
+kinematics_file = f'{subject_dir}\\CleanedKinematics\\OpenPose_default\\3-cameras\\Kinematics\\FiltPostAug\\ID{subject_num}_S{session_num}_{type}_LSTM_filt15Hz.mot'
 
 # Load the kinematics data
 mot_table = osim.TimeSeriesTable(kinematics_file)
@@ -73,7 +73,7 @@ for key in keys:
 # For filtered kinematics without marker cleaning
 #output_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM_filtered_{filt_freq}Hz.mot'
 # For filtered kinematics with marker cleaning
-output_file = f'{subject_dir}\\CleanedKinematics\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM_filtered_{filt_freq}Hz.mot'
+output_file = f'{subject_dir}\\CleanedKinematics\\OpenPose_default\\3-cameras\\Kinematics\\FiltPostAug\\ID{subject_num}_S{session_num}_{type}_LSTM_filtpostaug15Hz_filteredkinematics_{filt_freq}Hz.mot'
 
 # Write to file
 osim.STOFileAdapter.write(mot_table_filtered, output_file)

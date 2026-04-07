@@ -7,13 +7,26 @@ from pathlib import Path
 
 # Requirements to Change for each run
 ########################################################################
-date = 'March_16'
+date = 'March_2'
 subject_id = 'subject2'
 subject_num = (subject_id.replace('subject', ''))
-session_num = '8'
-type = 'run'
+session_num = '7'
+type = 'sprint'
 dist_threshold = -12.0  # Position threshold for filtering strides (e.g., -8m means keep strides from -8m to 0m)
 #########################################################################
+
+data_dir = f'G:\\Shared drives\\Stanford Football'
+date_dir = f'{data_dir}\\{date}'
+subject_dir = f'{date_dir}\\{subject_id}'
+
+stride_times = f'{subject_dir}\\CleanedKinematics\\filtered_post_augmentation\\Outputs\\stride_times.csv'
+#kinematics_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM_filtered.mot'
+kinematics_file = f'{subject_dir}\\CleanedKinematics\\OpenPose_default\\3-cameras\\Kinematics\\FiltPostAug\\ID{subject_num}_S{session_num}_{type}_LSTM_filtpostaug15Hz_filteredkinematics_15Hz.mot'
+
+###############################################################
+
+
+
 
 def butter_lowpass_filter(data, cutoff=2, fs=1000, order=4):
     nyq = 0.5 * fs
@@ -53,6 +66,11 @@ def calculate_stride_velocities(pelvis_x_filtered, time, stride_times_df):
         start_idx = np.argmin(np.abs(time - start_time))
         end_idx = np.argmin(np.abs(time - end_time))
         
+        # Safety check: ensure we have at least 2 data points
+        # This handles cases where consecutive stride markers are very close together
+        if end_idx <= start_idx:
+            end_idx = start_idx + 1
+        
         # Extract stride duration and position data
         stride_time = end_time - start_time
         stride_displacement = pelvis_x_filtered[end_idx] - pelvis_x_filtered[start_idx]
@@ -67,7 +85,11 @@ def calculate_stride_velocities(pelvis_x_filtered, time, stride_times_df):
         stride_position = pelvis_x_filtered[start_idx:end_idx+1]
         
         # Calculate instantaneous velocity using gradient
-        stride_velocity = np.gradient(stride_position, stride_time_vector)
+        if len(stride_time_vector) > 1:
+            stride_velocity = np.gradient(stride_position, stride_time_vector)
+        else:
+            # If only 1 point, set velocity to 0
+            stride_velocity = np.array([0.0])
         
         # Calculate average position for this stride (for quality assessment)
         avg_position = np.mean(stride_position)
@@ -308,13 +330,6 @@ def visualize_stride_quality(time, pelvis_x_filtered, times_frame, summary_df,
     plt.show()
 
 # ===== MAIN EXECUTION =====
-
-data_dir = f'G:\\Shared drives\\Stanford Football'
-date_dir = f'{data_dir}\\{date}'
-subject_dir = f'{date_dir}\\{subject_id}'
-
-stride_times = f'{subject_dir}\\Kinematics\\Outputs\\stride_times.csv'
-kinematics_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM_filtered.mot'
 
 # Load data
 print("Loading data...")
