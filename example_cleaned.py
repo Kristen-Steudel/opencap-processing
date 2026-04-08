@@ -34,7 +34,7 @@ session = '7'
 type = 'sprint'
 filter_freq = 15 # was 10 Hz for kinematics, I have 15 Hz for post aug markers
 coord_filter_freq = 10
-mtu_length_filter_freq = 5 # This was 10 Hz, I am testing out 5 Hz on MTU filter freq
+mtu_length_filter_freq = 10 # This was 10 Hz, I am testing out 5 Hz on MTU filter freq
 enable_mtu_filter_diagnostics = False
 
 ###########################################################

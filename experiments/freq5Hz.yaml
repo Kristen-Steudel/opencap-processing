@@ -1,0 +1,29 @@
+# Experiment Configuration: MTU Filter 5 Hz (Original)
+experiment_name: freq5Hz
+description: Original experiment with 5 Hz MTU length filter
+
+# Filter frequencies
+filter_freq: 15                    # Kinematics filter frequency (Hz)
+coord_filter_freq: 10             # Coordinate filter frequency (Hz)
+mtu_length_filter_freq: 5         # MTU length filter frequency (Hz) - ORIGINAL
+
+# Session parameters
+subject_num: 2
+date: March_2
+session: '7'
+type: sprint
+
+# Enable diagnostics
+enable_mtu_filter_diagnostics: false
+
+# Paths
+paths:
+  base: 'G:/Shared drives/Stanford Football'
+  output_base: 'Outputs'          # Will create Outputs/freq5Hz/
+
+# Scripts to run in pipeline (optional)
+scripts:
+  - example_cleaned
+  - CalcStrideMaxLastThreeStrides
+  - SeparateSteps
+  - CalcStepVelReedMethodWithFlags
