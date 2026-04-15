@@ -13,7 +13,7 @@ from scipy.stats import pearsonr
 from matplotlib import cm
 
 # ===== CONFIGURATION =====
-subject = 2
+subject = 5
 session = "S7"
 base_path = rf'G:\Shared drives\Stanford Football\March_2\subject{subject}\CleanedKinematics\filtered_post_augmentation\Outputs'
 trial_type = 'sprint'
@@ -137,69 +137,109 @@ right_to_plot = right_results[:n_right]
 left_colors = cm.Blues(np.linspace(0.45, 0.9, max(n_left, 1)))
 right_colors = cm.Reds(np.linspace(0.45, 0.9, max(n_right, 1)))
 
+
+def aligned_limits(exp_curves, lit_curve, pad_frac=0.05):
+    """Set axis limits so both datasets occupy the same vertical fraction."""
+    all_exp = np.concatenate(exp_curves)
+    exp_lo, exp_hi = all_exp.min(), all_exp.max()
+    lit_lo, lit_hi = lit_curve.min(), lit_curve.max()
+    exp_pad = (exp_hi - exp_lo) * pad_frac
+    lit_pad = (lit_hi - lit_lo) * pad_frac
+    return ([exp_lo - exp_pad, exp_hi + exp_pad],
+            [lit_lo - lit_pad, lit_hi + lit_pad])
+
+
 # Top-left: left lengths vs literature
+exp_curves_00 = []
 for idx, r in enumerate(left_to_plot):
     axes[0, 0].plot(normalized_x, r['length_curve'], color=left_colors[idx],
                     label=f'Stride {r["stride_number"]} (r={r["r_length"]:.3f})', linewidth=2)
-axes[0, 0].plot(normalized_x, lit_len_interp, 'k--', linewidth=2.5, label='Bing Yu et al.')
-axes[0, 0].set_xlabel('Gait Cycle (%)', fontsize=13)
-axes[0, 0].set_ylabel('BFLH Length', fontsize=13)
-axes[0, 0].set_title(f'Left BFLH Lengths vs Literature (last {n_left})', fontsize=13, fontweight='bold')
-axes[0, 0].legend(fontsize=9, loc='best')
-axes[0, 0].grid(True, alpha=0.3)
-axes[0, 0].set_xlim([0, 100])
+    exp_curves_00.append(r['length_curve'])
 ax0_twin = axes[0, 0].twinx()
+ax0_twin.plot(normalized_x, lit_len_interp, 'k--', linewidth=2.5, label='Bing Yu et al.')
+if exp_curves_00:
+    exp_lim, lit_lim = aligned_limits(exp_curves_00, lit_len_interp)
+    axes[0, 0].set_ylim(exp_lim)
+    ax0_twin.set_ylim(lit_lim)
+axes[0, 0].set_xlabel('Gait Cycle (%)', fontsize=13)
+axes[0, 0].set_ylabel('BFLH Length (normalized)', fontsize=13)
+axes[0, 0].set_title(f'Left BFLH Lengths vs Literature (last {n_left})', fontsize=13, fontweight='bold')
 ax0_twin.set_ylabel('Literature (m)', fontsize=11, color='gray')
 ax0_twin.tick_params(axis='y', labelcolor='gray')
-ax0_twin.set_ylim([lit_len_interp.min() - 0.01, lit_len_interp.max() + 0.01])
+h1, l1 = axes[0, 0].get_legend_handles_labels()
+h2, l2 = ax0_twin.get_legend_handles_labels()
+axes[0, 0].legend(h1 + h2, l1 + l2, fontsize=9, loc='best')
+axes[0, 0].grid(True, alpha=0.3)
+axes[0, 0].set_xlim([0, 100])
 
 # Top-right: right lengths vs literature
+exp_curves_01 = []
 for idx, r in enumerate(right_to_plot):
     axes[0, 1].plot(normalized_x, r['length_curve'], color=right_colors[idx],
                     label=f'Stride {r["stride_number"]} (r={r["r_length"]:.3f})', linewidth=2)
-axes[0, 1].plot(normalized_x, lit_len_interp, 'k--', linewidth=2.5, label='Bing Yu et al.')
-axes[0, 1].set_xlabel('Gait Cycle (%)', fontsize=13)
-axes[0, 1].set_ylabel('BFLH Length', fontsize=13)
-axes[0, 1].set_title(f'Right BFLH Lengths vs Literature (last {n_right})', fontsize=13, fontweight='bold')
-axes[0, 1].legend(fontsize=9, loc='best')
-axes[0, 1].grid(True, alpha=0.3)
-axes[0, 1].set_xlim([0, 100])
+    exp_curves_01.append(r['length_curve'])
 ax1_twin = axes[0, 1].twinx()
+ax1_twin.plot(normalized_x, lit_len_interp, 'k--', linewidth=2.5, label='Bing Yu et al.')
+if exp_curves_01:
+    exp_lim, lit_lim = aligned_limits(exp_curves_01, lit_len_interp)
+    axes[0, 1].set_ylim(exp_lim)
+    ax1_twin.set_ylim(lit_lim)
+axes[0, 1].set_xlabel('Gait Cycle (%)', fontsize=13)
+axes[0, 1].set_ylabel('BFLH Length (normalized)', fontsize=13)
+axes[0, 1].set_title(f'Right BFLH Lengths vs Literature (last {n_right})', fontsize=13, fontweight='bold')
 ax1_twin.set_ylabel('Literature (m)', fontsize=11, color='gray')
 ax1_twin.tick_params(axis='y', labelcolor='gray')
-ax1_twin.set_ylim([lit_len_interp.min() - 0.01, lit_len_interp.max() + 0.01])
+h1, l1 = axes[0, 1].get_legend_handles_labels()
+h2, l2 = ax1_twin.get_legend_handles_labels()
+axes[0, 1].legend(h1 + h2, l1 + l2, fontsize=9, loc='best')
+axes[0, 1].grid(True, alpha=0.3)
+axes[0, 1].set_xlim([0, 100])
 
 # Bottom-left: left velocities vs literature
+exp_curves_10 = []
 for idx, r in enumerate(left_to_plot):
     axes[1, 0].plot(normalized_x, r['velocity_curve'], color=left_colors[idx],
                     label=f'Stride {r["stride_number"]} (r={r["r_velocity"]:.3f})', linewidth=2)
-axes[1, 0].plot(normalized_x, lit_vel_interp, 'k--', linewidth=2.5, label='Bing Yu et al.')
-axes[1, 0].set_xlabel('Gait Cycle (%)', fontsize=13)
-axes[1, 0].set_ylabel('BFLH Velocity', fontsize=13)
-axes[1, 0].set_title(f'Left BFLH Velocities vs Literature (last {n_left})', fontsize=13, fontweight='bold')
-axes[1, 0].legend(fontsize=9, loc='best')
-axes[1, 0].grid(True, alpha=0.3)
-axes[1, 0].set_xlim([0, 100])
+    exp_curves_10.append(r['velocity_curve'])
 ax2_twin = axes[1, 0].twinx()
+ax2_twin.plot(normalized_x, lit_vel_interp, 'k--', linewidth=2.5, label='Bing Yu et al.')
+if exp_curves_10:
+    exp_lim, lit_lim = aligned_limits(exp_curves_10, lit_vel_interp)
+    axes[1, 0].set_ylim(exp_lim)
+    ax2_twin.set_ylim(lit_lim)
+axes[1, 0].set_xlabel('Gait Cycle (%)', fontsize=13)
+axes[1, 0].set_ylabel('BFLH Velocity (norm units/s)', fontsize=13)
+axes[1, 0].set_title(f'Left BFLH Velocities vs Literature (last {n_left})', fontsize=13, fontweight='bold')
 ax2_twin.set_ylabel('Literature (m/s)', fontsize=11, color='gray')
 ax2_twin.tick_params(axis='y', labelcolor='gray')
-ax2_twin.set_ylim([lit_vel_interp.min() - 0.1, lit_vel_interp.max() + 0.1])
+h1, l1 = axes[1, 0].get_legend_handles_labels()
+h2, l2 = ax2_twin.get_legend_handles_labels()
+axes[1, 0].legend(h1 + h2, l1 + l2, fontsize=9, loc='best')
+axes[1, 0].grid(True, alpha=0.3)
+axes[1, 0].set_xlim([0, 100])
 
 # Bottom-right: right velocities vs literature
+exp_curves_11 = []
 for idx, r in enumerate(right_to_plot):
     axes[1, 1].plot(normalized_x, r['velocity_curve'], color=right_colors[idx],
                     label=f'Stride {r["stride_number"]} (r={r["r_velocity"]:.3f})', linewidth=2)
-axes[1, 1].plot(normalized_x, lit_vel_interp, 'k--', linewidth=2.5, label='Bing Yu et al.')
-axes[1, 1].set_xlabel('Gait Cycle (%)', fontsize=13)
-axes[1, 1].set_ylabel('BFLH Velocity', fontsize=13)
-axes[1, 1].set_title(f'Right BFLH Velocities vs Literature (last {n_right})', fontsize=13, fontweight='bold')
-axes[1, 1].legend(fontsize=9, loc='best')
-axes[1, 1].grid(True, alpha=0.3)
-axes[1, 1].set_xlim([0, 100])
+    exp_curves_11.append(r['velocity_curve'])
 ax3_twin = axes[1, 1].twinx()
+ax3_twin.plot(normalized_x, lit_vel_interp, 'k--', linewidth=2.5, label='Bing Yu et al.')
+if exp_curves_11:
+    exp_lim, lit_lim = aligned_limits(exp_curves_11, lit_vel_interp)
+    axes[1, 1].set_ylim(exp_lim)
+    ax3_twin.set_ylim(lit_lim)
+axes[1, 1].set_xlabel('Gait Cycle (%)', fontsize=13)
+axes[1, 1].set_ylabel('BFLH Velocity (norm units/s)', fontsize=13)
+axes[1, 1].set_title(f'Right BFLH Velocities vs Literature (last {n_right})', fontsize=13, fontweight='bold')
 ax3_twin.set_ylabel('Literature (m/s)', fontsize=11, color='gray')
 ax3_twin.tick_params(axis='y', labelcolor='gray')
-ax3_twin.set_ylim([lit_vel_interp.min() - 0.1, lit_vel_interp.max() + 0.1])
+h1, l1 = axes[1, 1].get_legend_handles_labels()
+h2, l2 = ax3_twin.get_legend_handles_labels()
+axes[1, 1].legend(h1 + h2, l1 + l2, fontsize=9, loc='best')
+axes[1, 1].grid(True, alpha=0.3)
+axes[1, 1].set_xlim([0, 100])
 
 plt.tight_layout()
 plot_file = rf'{base_path}\bflh_literature_comparison_ID{subject}_{session}_{trial_type}.png'

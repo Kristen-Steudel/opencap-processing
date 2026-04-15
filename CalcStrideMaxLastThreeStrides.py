@@ -15,7 +15,7 @@ from matplotlib import cm
 
 import utilsKinematics
 
-subject = 2
+subject = 5
 session = "S7"
 base_path = rf'G:\Shared drives\Stanford Football\March_2\subject{subject}\CleanedKinematics\filtered_post_augmentation\Outputs'
 trial_type = 'sprint'
@@ -29,6 +29,7 @@ right_stride_times_file = rf'{base_path}\step_times_right.csv'
 right_stride_times_df = pd.read_csv(right_stride_times_file)
 
 # Load normalized muscle-tendon unit lengths
+# Added NoSync before _LSTM so that I could test these results out with or without synchronization algorithm in opencap
 mtu_lengths_file = rf'{base_path}\normalized_muscle_tendon_lengths_ID{subject}_{session}_{trial_type}_LSTM_filtpostaug15Hz_filteredkinematics_15Hz_filtered_15Hz.csv'
 mtu_lengths_df = pd.read_csv(mtu_lengths_file)
 

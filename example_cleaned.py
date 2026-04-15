@@ -21,18 +21,17 @@
 import os
 import glob
 import utilsKinematics
-from utils import download_kinematics, get_model_name_from_metadata
 from utilsPlotting import plot_dataframe
 import opensim as osim
 import pandas as pd
 import numpy as np
 
 ###### TO ADJUST
-subject_num = 2
+subject_num = 5
 date = 'March_2'
 session = '7'
 type = 'sprint'
-filter_freq = 15 # was 10 Hz for kinematics, I have 15 Hz for post aug markers
+filter_freq = 10 # was 10 Hz for kinematics, I have 15 Hz for post aug markers
 coord_filter_freq = 10
 mtu_length_filter_freq = 10 # This was 10 Hz, I am testing out 5 Hz on MTU filter freq
 enable_mtu_filter_diagnostics = False
@@ -49,7 +48,7 @@ session_id = os.path.normpath(f'G:\\Shared drives\\Stanford Football\\{date}\\su
 
 # Specify trial names in a list; use None to process all trials in a session.
 #specific_trial_names = [f'ID{subject_num}_S{session}_{type}_LSTM_filt{filter_freq}Hz'] #'ACCEL_LSTM', 'DECEL_LSTM']
-specific_trial_names = [f'ID{subject_num}_S{session}_{type}_LSTM_filtpostaug15Hz_filteredkinematics_15Hz'] #'ACCEL_LSTM', 'DECEL_LSTM']
+specific_trial_names = [f'ID{subject_num}_S{session}_{type}_LSTM_filtpostaug15Hz_filteredkinematics_10Hz'] #'ACCEL_LSTM', 'DECEL_LSTM']
 print(specific_trial_names)
 
 # Specify where to download the data.
@@ -114,8 +113,10 @@ if os.path.exists(session_id):
     modelName = os.path.splitext(os.path.basename(model_files[0]))[0]
     model_path = model_files[0]
 else:
-    trial_names, modelName = download_kinematics(session_id, folder=data_folder, trialNames=specific_trial_names)
-    model_path = os.path.join(data_folder, 'OpenSimData', 'Model', modelName + '.osim')
+    raise FileNotFoundError(
+        f"Local session path does not exist: {session_id}\n"
+        f"Check subject_num, date, and folder structure."
+    )
 
 # +++ ADD THIS LINE TO DEBUG +++
 print(f"--- Using model: {modelName}.osim ---") 

@@ -20,7 +20,7 @@ subject_id = 'subject2'
 subject_num = (subject_id.replace('subject', ''))
 type = 'sprint'
 session_num = '7'
-filt_freq = 15  # Hz, was 15 Hz
+filt_freq = 10  # Hz, was 15 Hz
 #######################################################################################
 
 data_dir = f'G:\\Shared drives\\Stanford Football'
@@ -30,7 +30,7 @@ subject_dir = f'{date_dir}\\{subject_id}'
 # For kinematics without cleaning
 #kinematics_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM.mot'
 # For kinematics with cleaning
-kinematics_file = f'{subject_dir}\\CleanedKinematics\\OpenPose_default\\3-cameras\\Kinematics\\FiltPostAug\\ID{subject_num}_S{session_num}_{type}_LSTM_filt15Hz.mot'
+kinematics_file = f'{subject_dir}\\CleanedKinematics\\OpenPose_default\\3-cameras\\Kinematics\\FiltPostAug\\ID{subject_num}_S{session_num}_{type}NoSync_LSTM_filt15Hz.mot'
 
 # Load the kinematics data
 mot_table = osim.TimeSeriesTable(kinematics_file)

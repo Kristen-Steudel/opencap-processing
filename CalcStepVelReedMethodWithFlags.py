@@ -8,7 +8,7 @@ from pathlib import Path
 # Requirements to Change for each run
 ########################################################################
 date = 'March_2'
-subject_id = 'subject2'
+subject_id = 'subject5'
 subject_num = (subject_id.replace('subject', ''))
 session_num = '7'
 type = 'sprint'
@@ -20,8 +20,9 @@ date_dir = f'{data_dir}\\{date}'
 subject_dir = f'{date_dir}\\{subject_id}'
 
 stride_times = f'{subject_dir}\\CleanedKinematics\\filtered_post_augmentation\\Outputs\\stride_times.csv'
-#kinematics_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM_filtered.mot'
-kinematics_file = f'{subject_dir}\\CleanedKinematics\\OpenPose_default\\3-cameras\\Kinematics\\FiltPostAug\\ID{subject_num}_S{session_num}_{type}_LSTM_filtpostaug15Hz_filteredkinematics_15Hz.mot'
+#kinematics_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM_filtered.mot' 
+# Test with and without synchronization algorithm in opencap NoSync before _LSTM in filepath added or removed
+kinematics_file = f'{subject_dir}\\CleanedKinematics\\OpenPose_default\\3-cameras\\Kinematics\\FiltPostAug\\ID{subject_num}_S{session_num}_{type}NoSync_LSTM_filtpostaug15Hz_filteredkinematics_15Hz.mot'
 
 ###############################################################
 
