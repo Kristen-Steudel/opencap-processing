@@ -22,8 +22,14 @@ coord_filter_freq = 10  # Hz lowpass for coordinate values (match example_cleane
 n_strides_to_plot = 2
 lit_speeds = ['7p0', '8p0','4p0']  # NordSprint speed bins to plot (first one is used for Pearson r)
 
-base_path = rf'G:\Shared drives\Stanford Football\{date}\subject{subject}\CleanedKinematics\filtered_post_augmentation\Outputs'
-mot_file = rf'G:\Shared drives\Stanford Football\{date}\subject{subject}\CleanedKinematics\OpenPose_default\3-cameras\Kinematics\FiltPostAug\ID{subject}_{session}_{trial_type}_LSTM_filtpostaug15Hz_filteredkinematics_15Hz.mot'
+# Paths for general trials 
+#base_path = rf'G:\Shared drives\Stanford Football\{date}\subject{subject}\CleanedKinematics\filtered_post_augmentation\Outputs'
+#mot_file = rf'G:\Shared drives\Stanford Football\{date}\subject{subject}\CleanedKinematics\OpenPose_default\3-cameras\Kinematics\FiltPostAug\ID{subject}_{session}_{trial_type}_LSTM_filtpostaug15Hz_filteredkinematics_15Hz.mot'
+
+# Paths for AnalysisCompare folder
+base_path = rf'G:\Shared drives\Stanford Football\AnalysisCompare\SplinedKinematics\SplinedKinematicsKnot80\Outputs'
+mot_file = rf'G:\Shared drives\Stanford Football\AnalysisCompare\SplinedKinematics\sprint_spline_ik_solution_knot80.mot'
+
 lit_file = r'G:\Shared drives\Stanford Football\LiteratureData\NordSprintKinematics\All_Kinematics_Combined.csv'
 hamner_dir = r'G:\Shared drives\Stanford Football\LiteratureData\SamHamnerKinematics'
 
@@ -194,7 +200,7 @@ print(metrics_df.to_string(index=False))
 print(f"\nSaved to: {metrics_file}")
 
 # ===== PLOT: 3 joints × 2 sides =====
-fig, axes = plt.subplots(3, 2, figsize=(18, 16))
+fig, axes = plt.subplots(3, 2, figsize=(18, 20))
 
 left_results = sorted([r for r in results if r['side'] == 'left'], key=lambda r: r['stride_number'])
 right_results = sorted([r for r in results if r['side'] == 'right'], key=lambda r: r['stride_number'])
@@ -249,23 +255,66 @@ for row_idx, (joint_base, joint_label, _) in enumerate(JOINTS):
             ax.plot(normalized_x, r[curve_key], color=colors[idx],
                     label=f'Stride {r["stride_number"]} (r={r_val:.3f})', linewidth=2)
 
-        ax.set_xlabel('Gait Cycle (%)', fontsize=12)
-        ax.set_ylabel('Angle (deg)', fontsize=12)
-        ax.set_title(f'{side_label} {joint_label}', fontsize=13, fontweight='bold')
-        if row_idx == 0 and col_idx == 0:
-            ax.legend(fontsize=8, loc='best')
+        if row_idx == len(JOINTS) - 1:
+            ax.set_xlabel('Gait Cycle (%)', fontsize=16)
+        else:
+            ax.set_xlabel('')
+        ax.set_ylabel('Angle (deg)', fontsize=16)
+        ax.set_title(f'{side_label} {joint_label}', fontsize=17, fontweight='bold')
+        ax.tick_params(axis='both', labelsize=13)
+        handles, labels = ax.get_legend_handles_labels()
+        stride_hl = [(h, l) for h, l in zip(handles, labels) if l.startswith('Stride')]
+        if stride_hl:
+            ax.legend(*zip(*stride_hl), fontsize=12, loc='best')
         ax.grid(True, alpha=0.3)
         ax.set_xlim([0, 100])
 
 speed_str = ' & '.join(s.replace('p', '.') for s in lit_speeds)
 plt.suptitle(f'Subject {subject} {session} ({trial_type}) vs NordSprint ({speed_str} m/s) & Hamner 2013',
-             fontsize=15, fontweight='bold', y=1.01)
+             fontsize=18, fontweight='bold', y=1.01)
 plt.tight_layout()
 plot_file = rf'{base_path}\nordsprint_kinematics_comparison_ID{subject}_{session}_{trial_type}.png'
 plt.savefig(plot_file, dpi=300, bbox_inches='tight')
-plt.show()
 
+# Collect legend info before plt.show() closes the figure
+all_handles, all_labels = axes[0, 0].get_legend_handles_labels()
+seen = set()
+unique_labels_ordered = []
+handle_props = []
+for h, l in zip(all_handles, all_labels):
+    if l not in seen:
+        seen.add(l)
+        unique_labels_ordered.append(l)
+        handle_props.append(h)
+
+plt.show()
 print(f"\nComparison plot saved to: {plot_file}")
+
+# ===== SAVE LEGEND AS SEPARATE PNG =====
+# Recreate proxy artists so they can belong to the new figure
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
+from matplotlib.collections import PolyCollection
+proxy_handles = []
+for h in handle_props:
+    if isinstance(h, PolyCollection):
+        fc = h.get_facecolor()[0]
+        proxy_handles.append(Patch(facecolor=fc, alpha=fc[3] if len(fc) > 3 else 1.0))
+    elif isinstance(h, Line2D):
+        proxy_handles.append(Line2D([0], [0],
+            color=h.get_color(), linestyle=h.get_linestyle(),
+            linewidth=h.get_linewidth()))
+    else:
+        proxy_handles.append(Patch(facecolor='gray', alpha=0.5))
+
+fig_leg = plt.figure(figsize=(10, 4))
+fig_leg.legend(proxy_handles, unique_labels_ordered, loc='center', fontsize=16,
+               ncol=2, frameon=True, edgecolor='black')
+fig_leg.tight_layout()
+legend_file = rf'{base_path}\nordsprint_kinematics_legend_ID{subject}_{session}_{trial_type}.png'
+fig_leg.savefig(legend_file, dpi=300, bbox_inches='tight')
+plt.show()
+print(f"Legend saved to: {legend_file}")
 
 # ===== SUMMARY STATS =====
 for side in ['left', 'right']:

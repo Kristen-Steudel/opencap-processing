@@ -15,7 +15,10 @@ from matplotlib import cm
 # ===== CONFIGURATION =====
 subject = 5
 session = "S7"
-base_path = rf'G:\Shared drives\Stanford Football\March_2\subject{subject}\CleanedKinematics\filtered_post_augmentation\Outputs'
+# General trials path
+#base_path = rf'G:\Shared drives\Stanford Football\March_2\subject{subject}\CleanedKinematics\filtered_post_augmentation\Outputs'
+# Analysis compare trials path
+base_path = rf'G:\Shared drives\Stanford Football\AnalysisCompare\SplinedKinematics\SplinedKinematicsKnot80\Outputs'
 trial_type = 'sprint'
 n_strides_to_plot = 2
 
@@ -25,7 +28,10 @@ lit_velocities_file = r'C:\Users\steudelkri\Documents\opencap-processing\experim
 # ===== LOAD DATA =====
 left_stride_times_df = pd.read_csv(rf'{base_path}\step_times_left.csv')
 right_stride_times_df = pd.read_csv(rf'{base_path}\step_times_right.csv')
-mtu_lengths_file = rf'{base_path}\normalized_muscle_tendon_lengths_ID{subject}_{session}_{trial_type}_LSTM_filtpostaug15Hz_filteredkinematics_15Hz_filtered_15Hz.csv'
+# general trials path
+# mtu_lengths_file = rf'{base_path}\normalized_muscle_tendon_lengths_ID{subject}_{session}_{trial_type}_LSTM_filtpostaug15Hz_filteredkinematics_15Hz_filtered_15Hz.csv'
+# analysis compare trials path
+mtu_lengths_file = rf'{base_path}\normalized_bflh_length_sprint_spline_ik_solution_knot80_filtered_10Hz.csv'
 mtu_lengths_df = pd.read_csv(mtu_lengths_file)
 
 # Literature data (headerless CSVs: column 0 = gait cycle %, column 1 = value)
@@ -161,14 +167,15 @@ if exp_curves_00:
     exp_lim, lit_lim = aligned_limits(exp_curves_00, lit_len_interp)
     axes[0, 0].set_ylim(exp_lim)
     ax0_twin.set_ylim(lit_lim)
-axes[0, 0].set_xlabel('Gait Cycle (%)', fontsize=13)
-axes[0, 0].set_ylabel('BFLH Length (normalized)', fontsize=13)
-axes[0, 0].set_title(f'Left BFLH Lengths vs Literature (last {n_left})', fontsize=13, fontweight='bold')
-ax0_twin.set_ylabel('Literature (m)', fontsize=11, color='gray')
-ax0_twin.tick_params(axis='y', labelcolor='gray')
+axes[0, 0].set_xlabel('')
+axes[0, 0].set_ylabel('BFLH Length (normalized)', fontsize=16)
+axes[0, 0].set_title(f'Left BFLH Lengths vs Literature (last {n_left})', fontsize=17, fontweight='bold')
+axes[0, 0].tick_params(axis='both', labelsize=13)
+ax0_twin.set_ylabel('Literature (m)', fontsize=14, color='gray')
+ax0_twin.tick_params(axis='y', labelcolor='gray', labelsize=13)
 h1, l1 = axes[0, 0].get_legend_handles_labels()
 h2, l2 = ax0_twin.get_legend_handles_labels()
-axes[0, 0].legend(h1 + h2, l1 + l2, fontsize=9, loc='best')
+axes[0, 0].legend(h1 + h2, l1 + l2, fontsize=12, loc='best')
 axes[0, 0].grid(True, alpha=0.3)
 axes[0, 0].set_xlim([0, 100])
 
@@ -184,14 +191,15 @@ if exp_curves_01:
     exp_lim, lit_lim = aligned_limits(exp_curves_01, lit_len_interp)
     axes[0, 1].set_ylim(exp_lim)
     ax1_twin.set_ylim(lit_lim)
-axes[0, 1].set_xlabel('Gait Cycle (%)', fontsize=13)
-axes[0, 1].set_ylabel('BFLH Length (normalized)', fontsize=13)
-axes[0, 1].set_title(f'Right BFLH Lengths vs Literature (last {n_right})', fontsize=13, fontweight='bold')
-ax1_twin.set_ylabel('Literature (m)', fontsize=11, color='gray')
-ax1_twin.tick_params(axis='y', labelcolor='gray')
+axes[0, 1].set_xlabel('')
+axes[0, 1].set_ylabel('BFLH Length (normalized)', fontsize=16)
+axes[0, 1].set_title(f'Right BFLH Lengths vs Literature (last {n_right})', fontsize=17, fontweight='bold')
+axes[0, 1].tick_params(axis='both', labelsize=13)
+ax1_twin.set_ylabel('Literature (m)', fontsize=14, color='gray')
+ax1_twin.tick_params(axis='y', labelcolor='gray', labelsize=13)
 h1, l1 = axes[0, 1].get_legend_handles_labels()
 h2, l2 = ax1_twin.get_legend_handles_labels()
-axes[0, 1].legend(h1 + h2, l1 + l2, fontsize=9, loc='best')
+axes[0, 1].legend(h1 + h2, l1 + l2, fontsize=12, loc='best')
 axes[0, 1].grid(True, alpha=0.3)
 axes[0, 1].set_xlim([0, 100])
 
@@ -207,14 +215,15 @@ if exp_curves_10:
     exp_lim, lit_lim = aligned_limits(exp_curves_10, lit_vel_interp)
     axes[1, 0].set_ylim(exp_lim)
     ax2_twin.set_ylim(lit_lim)
-axes[1, 0].set_xlabel('Gait Cycle (%)', fontsize=13)
-axes[1, 0].set_ylabel('BFLH Velocity (norm units/s)', fontsize=13)
-axes[1, 0].set_title(f'Left BFLH Velocities vs Literature (last {n_left})', fontsize=13, fontweight='bold')
-ax2_twin.set_ylabel('Literature (m/s)', fontsize=11, color='gray')
-ax2_twin.tick_params(axis='y', labelcolor='gray')
+axes[1, 0].set_xlabel('Gait Cycle (%)', fontsize=16)
+axes[1, 0].set_ylabel('BFLH Velocity (norm units/s)', fontsize=16)
+axes[1, 0].set_title(f'Left BFLH Velocities vs Literature (last {n_left})', fontsize=17, fontweight='bold')
+axes[1, 0].tick_params(axis='both', labelsize=13)
+ax2_twin.set_ylabel('Literature (m/s)', fontsize=14, color='gray')
+ax2_twin.tick_params(axis='y', labelcolor='gray', labelsize=13)
 h1, l1 = axes[1, 0].get_legend_handles_labels()
 h2, l2 = ax2_twin.get_legend_handles_labels()
-axes[1, 0].legend(h1 + h2, l1 + l2, fontsize=9, loc='best')
+axes[1, 0].legend(h1 + h2, l1 + l2, fontsize=12, loc='best')
 axes[1, 0].grid(True, alpha=0.3)
 axes[1, 0].set_xlim([0, 100])
 
@@ -230,14 +239,15 @@ if exp_curves_11:
     exp_lim, lit_lim = aligned_limits(exp_curves_11, lit_vel_interp)
     axes[1, 1].set_ylim(exp_lim)
     ax3_twin.set_ylim(lit_lim)
-axes[1, 1].set_xlabel('Gait Cycle (%)', fontsize=13)
-axes[1, 1].set_ylabel('BFLH Velocity (norm units/s)', fontsize=13)
-axes[1, 1].set_title(f'Right BFLH Velocities vs Literature (last {n_right})', fontsize=13, fontweight='bold')
-ax3_twin.set_ylabel('Literature (m/s)', fontsize=11, color='gray')
-ax3_twin.tick_params(axis='y', labelcolor='gray')
+axes[1, 1].set_xlabel('Gait Cycle (%)', fontsize=16)
+axes[1, 1].set_ylabel('BFLH Velocity (norm units/s)', fontsize=16)
+axes[1, 1].set_title(f'Right BFLH Velocities vs Literature (last {n_right})', fontsize=17, fontweight='bold')
+axes[1, 1].tick_params(axis='both', labelsize=13)
+ax3_twin.set_ylabel('Literature (m/s)', fontsize=14, color='gray')
+ax3_twin.tick_params(axis='y', labelcolor='gray', labelsize=13)
 h1, l1 = axes[1, 1].get_legend_handles_labels()
 h2, l2 = ax3_twin.get_legend_handles_labels()
-axes[1, 1].legend(h1 + h2, l1 + l2, fontsize=9, loc='best')
+axes[1, 1].legend(h1 + h2, l1 + l2, fontsize=12, loc='best')
 axes[1, 1].grid(True, alpha=0.3)
 axes[1, 1].set_xlim([0, 100])
 

@@ -19,7 +19,12 @@ filt_freq = 10  # Hz, was 15 Hz
 # This folder is for cleaned data shank_angular_velocity_ID10_S6_fly_LSTM_filtered_10Hz_filtered_10Hz
 #data_folder = rf'G:\Shared drives\Stanford Football\{date}\subject{subject_num}\CleanedKinematics\filtered_post_augmentation\Outputs\shank_angular_velocity_ID{subject_num}_S{session_num}_{type}_LSTM_filtered_{filt_freq}Hz_filtered_{filt_freq}Hz.csv'
 
-data_folder = rf'G:\Shared drives\Stanford Football\{date}\subject{subject_num}\CleanedKinematics\filtered_post_augmentation\Outputs\shank_angular_velocity_ID{subject_num}_S{session_num}_{type}_LSTM_filtpostaug15Hz_filteredkinematics_15Hz_filtered_15Hz.csv'
+# Data folder for general trials
+#data_folder = rf'G:\Shared drives\Stanford Football\{date}\subject{subject_num}\CleanedKinematics\filtered_post_augmentation\Outputs\shank_angular_velocity_ID{subject_num}_S{session_num}_{type}_LSTM_filtpostaug15Hz_filteredkinematics_15Hz_filtered_15Hz.csv'
+
+# Data folder for analysis compare trials
+data_folder = rf'G:\Shared drives\Stanford Football\AnalysisCompare\SplinedKinematics\SplinedKinematicsKnot80\Outputs\shank_angular_velocity_sprint_spline_ik_solution_knot80_filtered_10Hz.csv'
+
 # Load csv file as dataframe
 df = pd.read_csv(data_folder)
 
