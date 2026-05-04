@@ -12,26 +12,22 @@ from scipy.interpolate import interp1d
 from scipy.stats import pearsonr
 from matplotlib import cm
 
-# ===== CONFIGURATION =====
-subject = 5
-session = "S7"
-# General trials path
-#base_path = rf'G:\Shared drives\Stanford Football\March_2\subject{subject}\CleanedKinematics\filtered_post_augmentation\Outputs'
-# Analysis compare trials path
-base_path = rf'G:\Shared drives\Stanford Football\AnalysisCompare\SplinedKinematics\SplinedKinematicsKnot80\Outputs'
-trial_type = 'sprint'
+# Configuration imported from pipeline_config.py (edit once, used by all scripts)
+import pipeline_config as cfg
+paths = cfg.PATHS
+subject = cfg.SUBJECT_NUM
+session = f'S{cfg.SESSION}'
+base_path = paths['outputs_dir']
+trial_type = cfg.TRIAL_TYPE
 n_strides_to_plot = 2
 
-lit_lengths_file = r'C:\Users\steudelkri\Documents\opencap-processing\experiments\LiteratureData\BingYuBFLHLengths.csv'
-lit_velocities_file = r'C:\Users\steudelkri\Documents\opencap-processing\experiments\LiteratureData\BingYuBFLHVelocities.csv'
+lit_lengths_file = paths['lit_lengths_file']
+lit_velocities_file = paths['lit_velocities_file']
 
 # ===== LOAD DATA =====
-left_stride_times_df = pd.read_csv(rf'{base_path}\step_times_left.csv')
-right_stride_times_df = pd.read_csv(rf'{base_path}\step_times_right.csv')
-# general trials path
-# mtu_lengths_file = rf'{base_path}\normalized_muscle_tendon_lengths_ID{subject}_{session}_{trial_type}_LSTM_filtpostaug15Hz_filteredkinematics_15Hz_filtered_15Hz.csv'
-# analysis compare trials path
-mtu_lengths_file = rf'{base_path}\normalized_bflh_length_sprint_spline_ik_solution_knot80_filtered_10Hz.csv'
+left_stride_times_df = pd.read_csv(paths['step_times_left'])
+right_stride_times_df = pd.read_csv(paths['step_times_right'])
+mtu_lengths_file = paths['normalized_bflh_csv']
 mtu_lengths_df = pd.read_csv(mtu_lengths_file)
 
 # Literature data (headerless CSVs: column 0 = gait cycle %, column 1 = value)
@@ -119,7 +115,8 @@ metrics_df = pd.DataFrame([{
 } for r in results])
 metrics_df = metrics_df.sort_values(['side', 'stride_number']).reset_index(drop=True)
 
-metrics_file = rf'{base_path}\bflh_literature_correlation_ID{subject}_{session}_{trial_type}.csv'
+tag = paths['file_tag']
+metrics_file = rf'{base_path}\bflh_lit_corr_{tag}.csv'
 metrics_df.to_csv(metrics_file, index=False)
 
 print(f"{'='*70}")
@@ -252,7 +249,7 @@ axes[1, 1].grid(True, alpha=0.3)
 axes[1, 1].set_xlim([0, 100])
 
 plt.tight_layout()
-plot_file = rf'{base_path}\bflh_literature_comparison_ID{subject}_{session}_{trial_type}.png'
+plot_file = rf'{base_path}\bflh_lit_compare_{tag}.png'
 plt.savefig(plot_file, dpi=300, bbox_inches='tight')
 plt.show()
 

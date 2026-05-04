@@ -1,6 +1,7 @@
 # Filter the Kinematics with a zero-phase shift fourth-order Butterworth 15-Hz cutoff frequency
 
 import numpy as np
+import os
 from scipy.signal import filtfilt, butter
 import opensim as osim
 import pandas as pd
@@ -13,24 +14,11 @@ def butter_lowpass_filter(data, cutoff=15, fs=1000, order=4):
     return y
 
 
-# Requirements to Change for each run
-#######################################################################################
-date = 'March_2'
-subject_id = 'subject2'
-subject_num = (subject_id.replace('subject', ''))
-type = 'sprint'
-session_num = '7'
-filt_freq = 10  # Hz, was 15 Hz
-#######################################################################################
-
-data_dir = f'G:\\Shared drives\\Stanford Football'
-date_dir = f'{data_dir}\\{date}'
-subject_dir = f'{date_dir}\\{subject_id}'
-
-# For kinematics without cleaning
-#kinematics_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM.mot'
-# For kinematics with cleaning
-kinematics_file = f'{subject_dir}\\CleanedKinematics\\OpenPose_default\\3-cameras\\Kinematics\\FiltPostAug\\ID{subject_num}_S{session_num}_{type}NoSync_LSTM_filt15Hz.mot'
+# Configuration imported from pipeline_config.py (edit once, used by all scripts)
+import pipeline_config as cfg
+paths = cfg.PATHS
+filt_freq = cfg.FILT_FREQ
+kinematics_file = paths['kinematics_input']
 
 # Load the kinematics data
 mot_table = osim.TimeSeriesTable(kinematics_file)
@@ -70,11 +58,9 @@ mot_table_filtered = osim.TimeSeriesTable(time, filtered_matrix, list(column_lab
 for key in keys:
     mot_table_filtered.addTableMetaDataString(key, mot_table.getTableMetaDataString(key))
 
-# For filtered kinematics without marker cleaning
-#output_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM_filtered_{filt_freq}Hz.mot'
-# For filtered kinematics with marker cleaning
-output_file = f'{subject_dir}\\CleanedKinematics\\OpenPose_default\\3-cameras\\Kinematics\\FiltPostAug\\ID{subject_num}_S{session_num}_{type}_LSTM_filtpostaug15Hz_filteredkinematics_{filt_freq}Hz.mot'
+output_file = paths['kinematics_filtered']
 
 # Write to file
+os.makedirs(os.path.dirname(output_file), exist_ok=True)
 osim.STOFileAdapter.write(mot_table_filtered, output_file)
 print(f"Filtered kinematics saved to: {output_file}")

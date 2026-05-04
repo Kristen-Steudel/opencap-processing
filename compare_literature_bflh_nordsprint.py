@@ -13,25 +13,20 @@ from scipy.signal import butter, filtfilt
 from scipy.stats import pearsonr
 from matplotlib import cm
 
-# ===== CONFIGURATION =====
-subject = 5
-session = "S7"
-date = 'March_2'
-trial_type = 'sprint'
-coord_filter_freq = 10  # Hz lowpass for coordinate values (match example_cleaned.py)
+# Configuration imported from pipeline_config.py (edit once, used by all scripts)
+import pipeline_config as cfg
+paths = cfg.PATHS
+subject = cfg.SUBJECT_NUM
+session = f'S{cfg.SESSION}'
+trial_type = cfg.TRIAL_TYPE
+coord_filter_freq = cfg.COORD_FILTER_FREQ
 n_strides_to_plot = 2
-lit_speeds = ['7p0', '8p0','4p0']  # NordSprint speed bins to plot (first one is used for Pearson r)
+lit_speeds = cfg.LIT_SPEEDS
 
-# Paths for general trials 
-#base_path = rf'G:\Shared drives\Stanford Football\{date}\subject{subject}\CleanedKinematics\filtered_post_augmentation\Outputs'
-#mot_file = rf'G:\Shared drives\Stanford Football\{date}\subject{subject}\CleanedKinematics\OpenPose_default\3-cameras\Kinematics\FiltPostAug\ID{subject}_{session}_{trial_type}_LSTM_filtpostaug15Hz_filteredkinematics_15Hz.mot'
-
-# Paths for AnalysisCompare folder
-base_path = rf'G:\Shared drives\Stanford Football\AnalysisCompare\SplinedKinematics\SplinedKinematicsKnot80\Outputs'
-mot_file = rf'G:\Shared drives\Stanford Football\AnalysisCompare\SplinedKinematics\sprint_spline_ik_solution_knot80.mot'
-
-lit_file = r'G:\Shared drives\Stanford Football\LiteratureData\NordSprintKinematics\All_Kinematics_Combined.csv'
-hamner_dir = r'G:\Shared drives\Stanford Football\LiteratureData\SamHamnerKinematics'
+base_path = paths['outputs_dir']
+mot_file = paths['mot_file']
+lit_file = paths['lit_file_nordsprint']
+hamner_dir = paths['hamner_dir']
 
 # Joints to compare: (OpenSim column name, display label, Hamner CSV filename)
 JOINTS = [
@@ -118,8 +113,8 @@ for joint_base, _, hamner_filename in JOINTS:
 print(f"Hamner 2013 curves loaded: {list(hamner_curves.keys())}")
 
 # ===== LOAD STRIDE TIMES =====
-left_stride_times_df = pd.read_csv(rf'{base_path}\step_times_left.csv')
-right_stride_times_df = pd.read_csv(rf'{base_path}\step_times_right.csv')
+left_stride_times_df = pd.read_csv(paths['step_times_left'])
+right_stride_times_df = pd.read_csv(paths['step_times_right'])
 print(f"Left foot contacts: {len(left_stride_times_df)}, Right foot contacts: {len(right_stride_times_df)}")
 
 
@@ -190,7 +185,8 @@ for r in results:
     metric_rows.append(row)
 
 metrics_df = pd.DataFrame(metric_rows).sort_values(['side', 'stride_number']).reset_index(drop=True)
-metrics_file = rf'{base_path}\nordsprint_kinematics_correlation_ID{subject}_{session}_{trial_type}.csv'
+tag = paths['file_tag']
+metrics_file = rf'{base_path}\nordsprint_corr_{tag}.csv'
 metrics_df.to_csv(metrics_file, index=False)
 
 print(f"\n{'='*70}")
@@ -273,7 +269,7 @@ speed_str = ' & '.join(s.replace('p', '.') for s in lit_speeds)
 plt.suptitle(f'Subject {subject} {session} ({trial_type}) vs NordSprint ({speed_str} m/s) & Hamner 2013',
              fontsize=18, fontweight='bold', y=1.01)
 plt.tight_layout()
-plot_file = rf'{base_path}\nordsprint_kinematics_comparison_ID{subject}_{session}_{trial_type}.png'
+plot_file = rf'{base_path}\nordsprint_compare_{tag}.png'
 plt.savefig(plot_file, dpi=300, bbox_inches='tight')
 
 # Collect legend info before plt.show() closes the figure
@@ -311,7 +307,7 @@ fig_leg = plt.figure(figsize=(10, 4))
 fig_leg.legend(proxy_handles, unique_labels_ordered, loc='center', fontsize=16,
                ncol=2, frameon=True, edgecolor='black')
 fig_leg.tight_layout()
-legend_file = rf'{base_path}\nordsprint_kinematics_legend_ID{subject}_{session}_{trial_type}.png'
+legend_file = rf'{base_path}\nordsprint_legend_{tag}.png'
 fig_leg.savefig(legend_file, dpi=300, bbox_inches='tight')
 plt.show()
 print(f"Legend saved to: {legend_file}")

@@ -5,28 +5,13 @@ from scipy.signal import butter, filtfilt
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-# Requirements to Change for each run
-########################################################################
-date = 'March_2'
-subject_id = 'subject5'
-subject_num = (subject_id.replace('subject', ''))
-session_num = '7'
-type = 'sprint'
-dist_threshold = -12.0  # Position threshold for filtering strides (e.g., -8m means keep strides from -8m to 0m)
-#########################################################################
-
-data_dir = f'G:\\Shared drives\\Stanford Football'
-date_dir = f'{data_dir}\\{date}'
-subject_dir = f'{date_dir}\\{subject_id}'
-
-stride_times = f'{subject_dir}\\CleanedKinematics\\filtered_post_augmentation\\Outputs\\stride_times.csv'
-#kinematics_file = f'{subject_dir}\\OpenSimData\\OpenPose_default\\3-cameras\\Kinematics\\ID{subject_num}_S{session_num}_{type}_LSTM_filtered.mot' 
-# Test with and without synchronization algorithm in opencap NoSync before _LSTM in filepath added or removed
-kinematics_file = f'{subject_dir}\\CleanedKinematics\\OpenPose_default\\3-cameras\\Kinematics\\FiltPostAug\\ID{subject_num}_S{session_num}_{type}NoSync_LSTM_filtpostaug15Hz_filteredkinematics_15Hz.mot'
-
-###############################################################
-
-
+# Configuration imported from pipeline_config.py (edit once, used by all scripts)
+import pipeline_config as cfg
+paths = cfg.PATHS
+subject_dir = paths['subject_dir']
+dist_threshold = cfg.DIST_THRESHOLD
+step_times = paths['step_times_csv']
+kinematics_file = paths['kinematics_file_reed']
 
 
 def butter_lowpass_filter(data, cutoff=2, fs=1000, order=4):
@@ -36,7 +21,7 @@ def butter_lowpass_filter(data, cutoff=2, fs=1000, order=4):
     y = filtfilt(b, a, data)
     return y
 
-def calculate_stride_velocities(pelvis_x_filtered, time, stride_times_df):
+def calculate_stride_velocities(pelvis_x_filtered, time, step_times_df):
     """
     Calculate velocity for each stride using Reed's method:
     velocity = displacement / time
@@ -47,7 +32,7 @@ def calculate_stride_velocities(pelvis_x_filtered, time, stride_times_df):
         Filtered pelvis position data
     time : array
         Time vector from motion data
-    stride_times_df : DataFrame
+    step_times_df : DataFrame
         DataFrame with 'start_time' and 'end_time' columns for each stride
     
     Returns:
@@ -56,13 +41,13 @@ def calculate_stride_velocities(pelvis_x_filtered, time, stride_times_df):
         List containing velocity data for each stride
     """
     stride_data = []
-    total_strides = len(stride_times_df) - 1
+    total_strides = len(step_times_df) - 1
     
     for idx in range(total_strides):
-        start_time = stride_times_df.iloc[idx]['time']
-        end_time = stride_times_df.iloc[idx + 1]['time']
-        start_side = stride_times_df.iloc[idx]['side']
-        end_side = stride_times_df.iloc[idx + 1]['side']
+        start_time = step_times_df.iloc[idx]['time']
+        end_time = step_times_df.iloc[idx + 1]['time']
+        start_side = step_times_df.iloc[idx]['side']
+        end_side = step_times_df.iloc[idx + 1]['side']
 
         start_idx = np.argmin(np.abs(time - start_time))
         end_idx = np.argmin(np.abs(time - end_time))
@@ -334,7 +319,7 @@ def visualize_stride_quality(time, pelvis_x_filtered, times_frame, summary_df,
 
 # Load data
 print("Loading data...")
-times_frame = pd.read_csv(stride_times)
+times_frame = pd.read_csv(step_times)
 mot_table = osim.TimeSeriesTable(kinematics_file)
 
 # Check metadata
@@ -364,7 +349,7 @@ print("\nCalculating stride velocities...")
 stride_data = calculate_stride_velocities(pelvis_x_filtered, time, times_frame)
 
 # Save stride velocities
-output_dir = f'{subject_dir}\\Kinematics\\Outputs\\stride_velocities'
+output_dir = paths['stride_vel_output_dir']
 print(f"\nSaving stride velocity data to: {output_dir}")
 summary_df = save_stride_velocities(stride_data, output_dir)
 

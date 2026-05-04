@@ -443,7 +443,7 @@ class kinematics:
 
             # Apply optional filtering
 
-        if lowpass_cutoff_frequency is not None:
+        if lowpass_cutoff_frequency is not None and lowpass_cutoff_frequency > 0:
             time = df['time'].values
             dt = np.mean(np.diff(time))
             fs = 1.0 / dt
