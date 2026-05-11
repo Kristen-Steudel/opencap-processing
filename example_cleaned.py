@@ -98,7 +98,7 @@ if os.path.exists(session_id):
         trial_names = [t for t in trial_names if t in specific_trial_names]
 
     # Find model (.osim) under OpenPose folder.
-    model_files = sorted(glob.glob(os.path.join(session_root, 'OpenSimData', 'OpenPose_default','3-cameras','Model', '*scaled.osim')))
+    model_files = sorted(glob.glob(os.path.join(session_root, 'OpenSimData', paths['openpose_variant'], '3-cameras', 'Model', '*scaled.osim')))
     modelName = os.path.splitext(os.path.basename(model_files[0]))[0]
     model_path = model_files[0]
 else:

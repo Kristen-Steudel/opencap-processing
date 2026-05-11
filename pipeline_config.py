@@ -10,10 +10,11 @@ import os
 # =====================================================================
 # SUBJECT PARAMETERS  --  edit these per subject/session
 # =====================================================================
-SUBJECT_NUM = 19 # 16
+SUBJECT_NUM = 2
 DATE = 'March_2'
 SESSION = '7'
 TRIAL_TYPE = 'sprint'
+OPENPOSE_VARIANT = 'OpenPose_1x736_2scales'  # options: 'OpenPose_default', 'OpenPose_1x1008_4scales', 'OpenPose_1x736_2scales'
 FILT_FREQ = 10                 # kinematics lowpass filter (Hz)
 COORD_FILTER_FREQ = 10         # coordinate value filter (Hz)
 MTU_LENGTH_FILTER_FREQ = -1    # muscle-tendon length filter (Hz)
@@ -46,15 +47,17 @@ def build_paths():
     file_tag = trial_stem
 
     # -- FilterKinematics -------------------------------------------------
-    # Input: raw .mot (choose one variant by uncommenting)
-    # Variant A: Kinematics_NoSync (active)
+    # Input filename suffix -- edit KIN_SUFFIX to match your .mot filename
+    # Examples:
+    #   OpenPose_default + NoSync:  KIN_SUBFOLDER = 'Kinematics_NoSync', KIN_SUFFIX = ''
+    #   OpenPose_default + LSTM:    KIN_SUBFOLDER = 'Kinematics',        KIN_SUFFIX = '_LSTM'
+    #   1x1008_4scales trimmed:     KIN_SUBFOLDER = 'Kinematics',        KIN_SUFFIX = '_trimmed_LSTM'
+    #   1x736_2scales trimmed long: KIN_SUBFOLDER = 'Kinematics',        KIN_SUFFIX = '_trimmed_long_LSTM'
+    KIN_SUBFOLDER = 'Kinematics'
+    KIN_SUFFIX = '_LSTM' # example: '_trimmed_LSTM'
     kinematics_input = os.path.join(
-        subject_dir, 'OpenSimData', 'OpenPose_default', '3-cameras',
-        'Kinematics_NoSync', f'{trial_stem}.mot')
-    # Variant B: LSTM kinematics (uncomment to use)
-    # kinematics_input = os.path.join(
-    #     subject_dir, 'OpenSimData', 'OpenPose_default', '3-cameras',
-    #     'Kinematics', f'{trial_stem}_LSTM.mot')
+        subject_dir, 'OpenSimData', OPENPOSE_VARIANT, '3-cameras',
+        KIN_SUBFOLDER, f'{trial_stem}{KIN_SUFFIX}.mot')
 
     # Output: filtered .mot
     kinematics_filtered = os.path.join(
@@ -98,6 +101,7 @@ def build_paths():
         'trial_stem': trial_stem,
         'trial_name': trial_name,
         'file_tag': file_tag,
+        'openpose_variant': OPENPOSE_VARIANT,
 
         # FilterKinematics
         'kinematics_input': kinematics_input,

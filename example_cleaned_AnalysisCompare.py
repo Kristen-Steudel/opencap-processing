@@ -129,6 +129,7 @@ plot_dataframe(
     title='Coordinate values', labels=[trial_label],
     save_path=os.path.join(output_dir, f'coordinate_values_{trial_label}_{filt_tag}.png'))
 
+
 plot_dataframe(
     dataframes=[coord_speeds],
     y=['hip_flexion_l', 'hip_flexion_r', 'knee_angle_l', 'knee_angle_r'],
