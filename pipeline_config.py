@@ -23,7 +23,9 @@ MTU_LENGTH_FILTER_FREQ = -1    # muscle-tendon length filter (Hz)
 DIST_THRESHOLD = -12.0
 
 # NordSprint speed bins to plot (first is used for Pearson r)
-LIT_SPEEDS = ['7p0', '8p0', '4p0']
+#LIT_SPEEDS = ['7p0', '8p0', '4p0']
+LIT_SPEEDS = ['7p0']
+
 
 # =====================================================================
 # BASE DIRECTORIES  --  change only if your drive/root moves
@@ -54,7 +56,7 @@ def build_paths():
     #   1x1008_4scales trimmed:     KIN_SUBFOLDER = 'Kinematics',        KIN_SUFFIX = '_trimmed_LSTM'
     #   1x736_2scales trimmed long: KIN_SUBFOLDER = 'Kinematics',        KIN_SUFFIX = '_trimmed_long_LSTM'
     KIN_SUBFOLDER = 'Kinematics'
-    KIN_SUFFIX = '_LSTM' # example: '_trimmed_LSTM'
+    KIN_SUFFIX = '_LSTM' # example: '_trimmed_LSTM' or '_trimmed_long_LSTM' or '_LSTM'
     kinematics_input = os.path.join(
         subject_dir, 'OpenSimData', OPENPOSE_VARIANT, '3-cameras',
         KIN_SUBFOLDER, f'{trial_stem}{KIN_SUFFIX}.mot')
@@ -82,11 +84,17 @@ def build_paths():
         LOCAL_DIR, 'experiments', 'LiteratureData', 'BingYuBFLHLengths.csv')
     lit_velocities_file = os.path.join(
         LOCAL_DIR, 'experiments', 'LiteratureData', 'BingYuBFLHVelocities.csv')
+    # NordSprint BFLH normalized lengths (same units as experimental data)
+    lit_bflh_nordsprint = os.path.join(
+        LIT_DIR, 'NordSprintAllKinematics', 'BicepsFemoris_All_Combined.csv')
 
     # -- compare_literature_bflh_nordsprint --------------------------------
     mot_file = kinematics_filtered
     lit_file_nordsprint = os.path.join(
         LIT_DIR, 'NordSprintKinematics', 'All_Kinematics_Combined.csv')
+    # Full all-coordinate NordSprint literature file (used by PlotStrideKinematics)
+    lit_file_nordsprint_all = os.path.join(
+        LIT_DIR, 'NordSprintAllKinematics', 'All_Kinematics_Combined.csv')
     hamner_dir = os.path.join(LIT_DIR, 'SamHamnerKinematics')
 
     # -- CalcStepVelReedMethodWithFlags ------------------------------------
@@ -120,10 +128,12 @@ def build_paths():
         'normalized_bflh_csv': normalized_bflh_csv,
         'lit_lengths_file': lit_lengths_file,
         'lit_velocities_file': lit_velocities_file,
+        'lit_bflh_nordsprint': lit_bflh_nordsprint,
 
         # compare_literature_bflh_nordsprint
         'mot_file': mot_file,
         'lit_file_nordsprint': lit_file_nordsprint,
+        'lit_file_nordsprint_all': lit_file_nordsprint_all,
         'hamner_dir': hamner_dir,
 
         # CalcStepVelReedMethodWithFlags

@@ -97,10 +97,19 @@ if os.path.exists(session_id):
     if specific_trial_names is not None:
         trial_names = [t for t in trial_names if t in specific_trial_names]
 
-    # Find model (.osim) under OpenPose folder.
-    model_files = sorted(glob.glob(os.path.join(session_root, 'OpenSimData', paths['openpose_variant'], '3-cameras', 'Model', '*scaled.osim')))
-    modelName = os.path.splitext(os.path.basename(model_files[0]))[0]
+    # Find model (.osim) under the correct OpenPose variant folder.
+    model_files = sorted(glob.glob(os.path.join(
+        session_root, 'OpenSimData', paths['openpose_variant'],
+        '3-cameras', 'Model', '*scaled.osim')))
+    if not model_files:
+        raise FileNotFoundError(
+            f"No scaled .osim model found under "
+            f"OpenSimData/{paths['openpose_variant']}/3-cameras/Model/\n"
+            f"Check OPENPOSE_VARIANT in pipeline_config.py.")
+    # Pass the full absolute path so utilsKinematics uses it directly
+    # instead of doing a recursive glob that could pick the wrong variant.
     model_path = model_files[0]
+    modelName = model_path  # full path; utilsKinematics detects & uses directly
 else:
     raise FileNotFoundError(
         f"Local session path does not exist: {session_id}\n"
@@ -236,7 +245,7 @@ for trial_name in trial_names:
     # Specify both left and right shanks
     angular_velocity[trial_name] = kinematics[trial_name].get_body_angular_velocity(
         body_names=['tibia_l', 'tibia_r'],  # Both shanks
-        lowpass_cutoff_frequency=2, #  2 Hz cutoff frequency for angular velocity for detecting steps
+        lowpass_cutoff_frequency=3, #  2 Hz cutoff frequency for angular velocity for detecting steps
         expressed_in='ground'  # Options: 'body' or 'ground'
     )
 

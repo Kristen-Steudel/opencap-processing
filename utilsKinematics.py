@@ -53,6 +53,10 @@ class kinematics:
         if modelName is None:
             modelName = utils.get_model_name_from_metadata(sessionDir)
             modelPath = os.path.join(modelBasePath,modelName)
+        elif os.path.isabs(modelName) and os.path.isfile(modelName):
+            # Full absolute path supplied directly — use it as-is.
+            modelPath = modelName
+            modelName = os.path.splitext(os.path.basename(modelPath))[0]
         else:
             modelPath = os.path.join(modelBasePath,
                                  '{}.osim'.format(modelName))
