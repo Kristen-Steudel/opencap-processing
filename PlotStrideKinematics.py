@@ -141,13 +141,16 @@ fs_mot = 1.0 / np.mean(np.diff(mot_df['time'].values))
 print(f"  {len(mot_df)} frames at ~{fs_mot:.1f} Hz")
 
 # Identify angle columns (all except 'time', skip pelvis translations and
-# any beta/reserve columns)
+# any beta/reserve columns).  pelvis_tilt / pelvis_list / pelvis_rotation
+# are rotations (degrees) and ARE included; only the three translation DOFs
+# (pelvis_tx, pelvis_ty, pelvis_tz) are excluded.
 SKIP_SUFFIXES = ('_beta', '_reserve', '_residual')
+SKIP_EXACT = {'pelvis_tx', 'pelvis_ty', 'pelvis_tz'}
 angle_cols = [
     c for c in mot_df.columns
     if c != 'time'
+    and c not in SKIP_EXACT
     and not any(c.endswith(s) for s in SKIP_SUFFIXES)
-    and not c.startswith('pelvis_t')   # pelvis translations are in metres
 ]
 print(f"  Angle columns to plot ({len(angle_cols)}): {angle_cols}")
 

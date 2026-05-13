@@ -87,6 +87,9 @@ def build_paths():
     # NordSprint BFLH normalized lengths (same units as experimental data)
     lit_bflh_nordsprint = os.path.join(
         LIT_DIR, 'NordSprintAllKinematics', 'BicepsFemoris_All_Combined.csv')
+    # Combined hamstring MTU lengths + velocities (MATLAB/OpenSim computed)
+    lit_hamstrings_combined = os.path.join(
+        LIT_DIR, 'NordSprintAllKinematics', 'AllHamstrings_Combined.csv')
 
     # -- compare_literature_bflh_nordsprint --------------------------------
     mot_file = kinematics_filtered
@@ -129,6 +132,7 @@ def build_paths():
         'lit_lengths_file': lit_lengths_file,
         'lit_velocities_file': lit_velocities_file,
         'lit_bflh_nordsprint': lit_bflh_nordsprint,
+        'lit_hamstrings_combined': lit_hamstrings_combined,
 
         # compare_literature_bflh_nordsprint
         'mot_file': mot_file,
@@ -140,6 +144,10 @@ def build_paths():
         'step_times_csv': step_times_csv,
         'kinematics_file_reed': kinematics_file_reed,
         'stride_vel_output_dir': stride_vel_output_dir,
+
+        # PeakBFLHAngles
+        'peak_bflh_angles_csv': os.path.join(
+            outputs_dir, f'peak_bflh_angles_{file_tag}.csv'),
     }
 
 

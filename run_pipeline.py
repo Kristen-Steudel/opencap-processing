@@ -24,6 +24,7 @@ PIPELINE = [
     ('5', 'compare_literature_bflh_nordsprint.py', 'Compare angles to NordSprint / Hamner'),
     ('6', 'CalcStepVelReedMethodWithFlags.py',  'Calculate stride velocities (Reed)'),
     ('7', 'PlotStrideKinematics.py',            'Plot all joint angles per stride'),
+    ('8', 'PeakBFLHAngles.py',                 'Extract angles at peak BFLH length per stride'),
 ]
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))

@@ -24,9 +24,9 @@ n_strides_to_plot = 2
 
 lit_lengths_file = paths['lit_lengths_file']
 lit_velocities_file = paths['lit_velocities_file']
-lit_bflh_nordsprint_file = paths['lit_bflh_nordsprint']
+lit_hamstrings_file = paths['lit_hamstrings_combined']
 
-# Speed bin to use from the NordSprint BFLH CSV
+# Speed bin to use from the hamstrings CSV
 NORDSPRINT_SPEED = '7p0'
 
 # ===== LOAD DATA =====
@@ -55,33 +55,50 @@ normalized_x = np.linspace(0, 100, 101)
 lit_len_interp = interp1d(lit_len_x, lit_len_y, kind='linear', fill_value='extrapolate')(normalized_x)
 lit_vel_interp = interp1d(lit_vel_x, lit_vel_y, kind='linear', fill_value='extrapolate')(normalized_x)
 
-# NordSprint BFLH normalized lengths and derived velocity — right-side reference
+# Hamstring MTU reference curves — right-side, 7 m/s
+# Lengths and velocities are pre-computed in MATLAB/OpenSim.
+# Column naming: BFLH_Right_{speed}_Len_Mean/Std and BFLH_Right_{speed}_Vel_Mean/Std
 ns_len_mean  = None
 ns_len_std   = None
 ns_vel_mean  = None
 ns_vel_upper = None
 ns_vel_lower = None
-if os.path.exists(lit_bflh_nordsprint_file):
-    ns_df = pd.read_csv(lit_bflh_nordsprint_file)
-    ns_pct    = ns_df['Percent_Stride'].values
-    mean_col  = f'BF_Right_{NORDSPRINT_SPEED}_Mean'
-    std_col   = f'BF_Right_{NORDSPRINT_SPEED}_Std'
-    if mean_col in ns_df.columns and std_col in ns_df.columns:
-        ns_len_mean = interp1d(ns_pct, ns_df[mean_col].values,
-                               kind='linear', fill_value='extrapolate')(normalized_x)
-        ns_len_std  = interp1d(ns_pct, ns_df[std_col].values,
-                               kind='linear', fill_value='extrapolate')(normalized_x)
-        # Velocity = derivative of length w.r.t. gait-cycle % (norm units / % stride)
-        # Shape matches experimental velocity; aligned_limits aligns the scales visually.
-        ns_vel_mean  = np.gradient(ns_len_mean, normalized_x)
-        ns_vel_upper = np.gradient(ns_len_mean + ns_len_std, normalized_x)
-        ns_vel_lower = np.gradient(ns_len_mean - ns_len_std, normalized_x)
-        print(f"Loaded NordSprint BFLH right-side reference "
-              f"({NORDSPRINT_SPEED.replace('p','.')} m/s)")
-    else:
-        print(f"WARNING: columns {mean_col}/{std_col} not found in NordSprint BFLH file.")
+if os.path.exists(lit_hamstrings_file):
+    ns_df = pd.read_csv(lit_hamstrings_file)
+    ns_pct = ns_df['Percent_Stride'].values
+    spd = NORDSPRINT_SPEED
+
+    len_mean_col = f'BFLH_Right_{spd}_Len_Mean'
+    len_std_col  = f'BFLH_Right_{spd}_Len_Std'
+    vel_mean_col = f'BFLH_Right_{spd}_Vel_Mean'
+    vel_std_col  = f'BFLH_Right_{spd}_Vel_Std'
+
+    def _interp(col):
+        return interp1d(ns_pct, ns_df[col].values,
+                        kind='linear', fill_value='extrapolate')(normalized_x)
+
+    if len_mean_col in ns_df.columns:
+        ns_len_mean = _interp(len_mean_col)
+        ns_len_std  = _interp(len_std_col)
+
+    if vel_mean_col in ns_df.columns:
+        vel_vals = ns_df[vel_mean_col].values
+        # Velocity column may still be all-zeros if MATLAB hasn't been run yet
+        if vel_vals.max() != 0 or vel_vals.min() != 0:
+            ns_vel_mean  = _interp(vel_mean_col)
+            ns_vel_std   = _interp(vel_std_col)
+            ns_vel_upper = ns_vel_mean + ns_vel_std
+            ns_vel_lower = ns_vel_mean - ns_vel_std
+        else:
+            print(f"NOTE: velocity columns in hamstrings CSV are all zero — "
+                  f"populate them from MATLAB to enable the velocity overlay.")
+
+    speed_str = spd.replace('p', '.')
+    print(f"Loaded hamstrings reference ({speed_str} m/s): "
+          f"length={'OK' if ns_len_mean is not None else 'missing'}, "
+          f"velocity={'OK' if ns_vel_mean is not None else 'zeros/missing'}")
 else:
-    print(f"WARNING: NordSprint BFLH file not found, skipping overlay:\n  {lit_bflh_nordsprint_file}")
+    print(f"WARNING: hamstrings file not found, skipping overlay:\n  {lit_hamstrings_file}")
 
 
 # ===== HELPER FUNCTIONS =====
@@ -222,56 +239,42 @@ def finish_length_ax(ax, twin, exp_curves, ns_curves):
 def finish_velocity_ax(ax, twin_by, exp_curves, show_ns_legend=False):
     """Apply limits, labels, and legend for a velocity subplot.
 
-    NordSprint velocity (d(norm_length)/d(%stride)) has very different units
-    from both experimental (norm/s) and Bing Yu (m/s), so it gets its own
-    second twin axis aligned visually to the primary range via aligned_limits.
-    This makes the curve shape visible without distorting the other axes.
+    NordSprint velocity is in m/s (same units as Bing Yu), so both are
+    plotted on the single twin axis and share its scale.
 
-    twin_by  : first twinx axis (Bing Yu velocity, m/s, already plotted)
+    twin_by        : twinx axis (Bing Yu already plotted on it)
     show_ns_legend : include NordSprint legend entries (left subplot only)
     """
-    # ── align primary (experimental) ↔ first twin (Bing Yu) ─────────
+    # ── NordSprint velocity on the primary axis (both in norm/s) ─────
+    if ns_vel_mean is not None:
+        ax.plot(normalized_x, ns_vel_mean,
+                color='black', linewidth=2.0, linestyle='-',
+                label=f'NordSprint {speed_label} m/s mean' if show_ns_legend else '_nolegend_')
+        ax.plot(normalized_x, ns_vel_upper,
+                color='black', linewidth=1.2, linestyle=':',
+                label='NordSprint ± 1 SD' if show_ns_legend else '_nolegend_')
+        ax.plot(normalized_x, ns_vel_lower,
+                color='black', linewidth=1.2, linestyle=':',
+                label='_nolegend_')
+
+    # ── align primary (exp + NordSprint, norm/s) ↔ twin (Bing Yu, m/s) ─
     if exp_curves:
-        exp_lim, by_lim = aligned_limits(exp_curves, lit_vel_interp)
+        primary_data = list(exp_curves)
+        if ns_vel_mean is not None:
+            primary_data += [ns_vel_mean, ns_vel_upper, ns_vel_lower]
+        exp_lim, by_lim = aligned_limits(primary_data, lit_vel_interp)
         ax.set_ylim(exp_lim)
         twin_by.set_ylim(by_lim)
 
-    twin_by.set_ylabel('Bing Yu et al. (m/s)', fontsize=14, color='gray')
-    twin_by.tick_params(axis='y', labelcolor='gray', labelsize=13)
-
-    # ── second twin axis for NordSprint velocity ─────────────────────
-    h_ns, l_ns = [], []
-    if ns_vel_mean is not None and exp_curves:
-        twin_ns = ax.twinx()
-        twin_ns.spines['right'].set_position(('outward', 65))
-
-        h1, = twin_ns.plot(normalized_x, ns_vel_mean,
-                           color='black', linewidth=2.0, linestyle='-',
-                           label=f'NordSprint {speed_label} m/s mean')
-        h2, = twin_ns.plot(normalized_x, ns_vel_upper,
-                           color='black', linewidth=1.2, linestyle=':',
-                           label='NordSprint ± 1 SD')
-        twin_ns.plot(normalized_x, ns_vel_lower,
-                     color='black', linewidth=1.2, linestyle=':')
-
-        # Align NordSprint axis so its curve spans the same visual fraction
-        # as the experimental velocity — makes shape comparison possible.
-        _, ns_lim = aligned_limits(exp_curves, ns_vel_mean)
-        twin_ns.set_ylim(ns_lim)
-        twin_ns.set_ylabel('NordSprint vel\n(norm/%stride)', fontsize=11)
-        twin_ns.tick_params(axis='y', labelsize=10)
-
-        if show_ns_legend:
-            h_ns = [h1, h2]
-            l_ns = [h1.get_label(), h2.get_label()]
-
-    # ── common styling & combined legend ────────────────────────────
+    # ── common styling & combined legend ─────────────────────────────
     ax.set_xlabel('Gait Cycle (%)', fontsize=16)
     ax.set_ylabel('BFLH Velocity (norm units/s)', fontsize=16)
     ax.tick_params(axis='both', labelsize=13)
+    twin_by.set_ylabel('Bing Yu et al. (m/s)', fontsize=14, color='gray')
+    twin_by.tick_params(axis='y', labelcolor='gray', labelsize=13)
     h1, l1 = ax.get_legend_handles_labels()
     h2, l2 = twin_by.get_legend_handles_labels()
-    ax.legend(h1 + h2 + h_ns, l1 + l2 + l_ns, fontsize=12, loc='best')
+    ax.legend(h1 + h2, l1 + l2, fontsize=12, loc='best')
     ax.grid(True, alpha=0.3)
     ax.set_xlim([0, 100])
 
