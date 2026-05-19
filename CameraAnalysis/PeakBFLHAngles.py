@@ -24,7 +24,10 @@ import numpy as np
 import pandas as pd
 
 # import pipeline_config as cfg
-import pipeline_config_CameraTest as cfg
+import sys as _sys
+_sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import importlib as _il
+cfg = _il.import_module(os.environ.get('PIPELINE_CONFIG', 'pipeline_config_CameraTest'))
 
 # =====================================================================
 # CONFIGURATION

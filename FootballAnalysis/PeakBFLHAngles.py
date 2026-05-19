@@ -24,7 +24,9 @@ import numpy as np
 import pandas as pd
 
 # import pipeline_config as cfg
-import pipeline_config_CameraTest as cfg
+import sys as _sys
+_sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import pipeline_config as cfg
 
 # =====================================================================
 # CONFIGURATION

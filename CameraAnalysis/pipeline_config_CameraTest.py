@@ -10,11 +10,11 @@ import os
 # =====================================================================
 # SUBJECT PARAMETERS  --  edit these per subject/session
 # =====================================================================
-SUBJECT_NUM = 5
-DATE = 'March_2'
-SESSION = '7'
-TRIAL_TYPE = 'sprint'
-OPENPOSE_VARIANT = 'OpenPose_1x736_2scales'  # options: 'OpenPose_default', 'OpenPose_1x1008_4scales', 'OpenPose_1x736_2scales'
+SUBJECT_NUM = 1
+DATE    = ''                   # no date subfolder in this dataset
+SESSION = ''                   # no session number in this dataset
+TRIAL_TYPE = 'sprint'         # matches the .mot filename prefix (e.g. sprint2_LSTM.mot)
+OPENPOSE_VARIANT = 'OpenPose_1x736_2scales'
 FILT_FREQ = 10                 # kinematics lowpass filter (Hz)
 COORD_FILTER_FREQ = 10         # coordinate value filter (Hz)
 MTU_LENGTH_FILTER_FREQ = -1    # muscle-tendon length filter (Hz)
@@ -23,15 +23,14 @@ MTU_LENGTH_FILTER_FREQ = -1    # muscle-tendon length filter (Hz)
 DIST_THRESHOLD = -12.0
 
 # NordSprint speed bins to plot (first is used for Pearson r)
-#LIT_SPEEDS = ['7p0', '8p0', '4p0']
 LIT_SPEEDS = ['7p0']
 
 
 # =====================================================================
 # BASE DIRECTORIES  --  change only if your drive/root moves
 # =====================================================================
-DATA_DIR = r'G:\Shared drives\Stanford Football'
-LIT_DIR = os.path.join(DATA_DIR, 'LiteratureData')
+DATA_DIR = r'G:\Shared drives\Sony Camera Testing'
+LIT_DIR = r'G:\Shared drives\Stanford Football\LiteratureData'
 LOCAL_DIR = r'C:\Users\steudelkri\Documents\opencap-processing'
 
 # =====================================================================
@@ -42,21 +41,16 @@ def build_paths():
     """Return a dict of every path used by the pipeline scripts."""
 
     subject_id = f'subject{SUBJECT_NUM}'
-    subject_dir = os.path.join(DATA_DIR, DATE, subject_id)
-    trial_stem = f'ID{SUBJECT_NUM}_S{SESSION}_{TRIAL_TYPE}'
+    # Sony Camera Testing has no DATE subfolder: DATA_DIR / subject1 / ...
+    subject_dir = os.path.join(DATA_DIR, subject_id)
 
-    # Short tag used in output filenames (e.g. "ID11_S7_sprint")
-    file_tag = trial_stem
+    # Kinematics filename is just TRIAL_TYPE + KIN_SUFFIX (no ID/session prefix)
+    trial_stem = TRIAL_TYPE          # e.g. 'sprint2'
+    file_tag   = f'sub{SUBJECT_NUM}_{TRIAL_TYPE}'   # e.g. 'sub1_sprint2'
 
     # -- FilterKinematics -------------------------------------------------
-    # Input filename suffix -- edit KIN_SUFFIX to match your .mot filename
-    # Examples:
-    #   OpenPose_default + NoSync:  KIN_SUBFOLDER = 'Kinematics_NoSync', KIN_SUFFIX = ''
-    #   OpenPose_default + LSTM:    KIN_SUBFOLDER = 'Kinematics',        KIN_SUFFIX = '_LSTM'
-    #   1x1008_4scales trimmed:     KIN_SUBFOLDER = 'Kinematics',        KIN_SUFFIX = '_trimmed_LSTM'
-    #   1x736_2scales trimmed long: KIN_SUBFOLDER = 'Kinematics',        KIN_SUFFIX = '_trimmed_long_LSTM'
     KIN_SUBFOLDER = 'Kinematics'
-    KIN_SUFFIX = '_LSTM' # example: '_trimmed_LSTM' or '_trimmed_long_LSTM' or '_LSTM'
+    KIN_SUFFIX    = '_LSTM'          # sprint2_LSTM.mot
     kinematics_input = os.path.join(
         subject_dir, 'OpenSimData', OPENPOSE_VARIANT, '3-cameras',
         KIN_SUBFOLDER, f'{trial_stem}{KIN_SUFFIX}.mot')
@@ -94,7 +88,7 @@ def build_paths():
     # -- compare_literature_bflh_nordsprint --------------------------------
     mot_file = kinematics_filtered
     lit_file_nordsprint = os.path.join(
-        LIT_DIR, 'NordSprintKinematics', 'All_Kinematics_Combined.csv')
+        LIT_DIR, 'NordSprintAllKinematics', 'All_Kinematics_Combined.csv')
     # Full all-coordinate NordSprint literature file (used by PlotStrideKinematics)
     lit_file_nordsprint_all = os.path.join(
         LIT_DIR, 'NordSprintAllKinematics', 'All_Kinematics_Combined.csv')
@@ -160,15 +154,15 @@ PATHS = build_paths()
 def print_summary():
     """Print current configuration."""
     print('=' * 60)
-    print('Pipeline Configuration')
+    print('Pipeline Configuration  [CameraTest]')
     print('=' * 60)
     print(f'  Subject:        {SUBJECT_NUM}')
-    print(f'  Date:           {DATE}')
-    print(f'  Session:        {SESSION}')
     print(f'  Trial type:     {TRIAL_TYPE}')
+    print(f'  OpenPose:       {OPENPOSE_VARIANT}')
     print(f'  Filter freq:    {FILT_FREQ} Hz')
     print(f'  Coord filter:   {COORD_FILTER_FREQ} Hz')
     print(f'  MTU filter:     {MTU_LENGTH_FILTER_FREQ} Hz')
+    print(f'  Kin input:      {PATHS["kinematics_input"]}')
     print(f'  Outputs dir:    {PATHS["outputs_dir"]}')
     print('=' * 60)
 

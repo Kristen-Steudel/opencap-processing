@@ -16,7 +16,9 @@ def butter_lowpass_filter(data, cutoff=15, fs=1000, order=4):
 
 # Configuration imported from pipeline_config.py (edit once, used by all scripts)
 # import pipeline_config as cfg
-import pipeline_config_CameraTest as cfg
+import sys as _sys
+_sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import pipeline_config as cfg
 paths = cfg.PATHS
 filt_freq = cfg.FILT_FREQ
 kinematics_file = paths['kinematics_input']

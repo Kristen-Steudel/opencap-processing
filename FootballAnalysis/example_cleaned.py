@@ -19,6 +19,9 @@
 '''
 
 import os
+import sys as _sys
+_sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import glob
 import utilsKinematics
 from utilsPlotting import plot_dataframe
@@ -27,7 +30,7 @@ import pandas as pd
 import numpy as np
 
 # Configuration imported from pipeline_config.py (edit once, used by all scripts)
-import pipeline_config_CameraTest as cfg
+import pipeline_config as cfg
 paths = cfg.PATHS
 filter_freq = cfg.FILT_FREQ
 coord_filter_freq = cfg.COORD_FILTER_FREQ

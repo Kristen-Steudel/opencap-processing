@@ -1,0 +1,154 @@
+"""
+run_pipeline_compare.py
+
+Runs the full 8-step pipeline on the OpenCap trial (pipeline_config_OpenCap),
+then runs Step 9 (CompareTrials.py) to compare that trial against the OpenPose
+trial defined in pipeline_config_CameraTest.
+
+The individual pipeline scripts (steps 1–8) pick up their config via the
+PIPELINE_CONFIG environment variable, so no script edits are needed.
+
+Usage:
+    python run_pipeline_compare.py                  # run all steps (1–9)
+    python run_pipeline_compare.py --steps 2 3 4    # run specific steps
+    python run_pipeline_compare.py --steps 9        # comparison only
+    python run_pipeline_compare.py --list           # list steps
+"""
+
+import argparse
+import os
+import sys
+import subprocess
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Config name passed to the individual pipeline scripts via env var
+OPENCAP_CONFIG = 'pipeline_config_OpenCap'
+
+# Steps 1–8 run the standard scripts under the OpenCap config.
+# Step 9 runs CompareTrials.py which imports both configs internally.
+PIPELINE = [
+    ('1', 'FilterKinematics.py',                'Filter raw kinematics  [OpenCap]'),
+    ('2', 'example_cleaned.py',                 'Compute MTU lengths/velocities  [OpenCap]'),
+    ('3', 'SeparateSteps.py',                   'Detect foot contacts / stride times  [OpenCap]'),
+    ('4', 'compare_literature_bflh.py',         'Compare BFLH to literature  [OpenCap]'),
+    ('5', 'compare_literature_bflh_nordsprint.py', 'Compare angles to NordSprint  [OpenCap]'),
+    ('6', 'CalcStepVelReedMethodWithFlags.py',  'Calculate stride velocities  [OpenCap]'),
+    ('7', 'PlotStrideKinematics.py',            'Plot all joint angles per stride  [OpenCap]'),
+    ('8', 'PeakBFLHAngles.py',                 'Extract angles at peak BFLH length  [OpenCap]'),
+    ('9', 'CompareTrials.py',                   'Compare OpenCap vs OpenPose kinematics & BFLH'),
+]
+
+
+def run_step(step_id, script_file, description, config_name=None, extra_env=None):
+    """Run one pipeline step as a subprocess, optionally injecting config."""
+    script_path = os.path.join(SCRIPT_DIR, script_file)
+    if not os.path.exists(script_path):
+        print(f'  SKIP  {script_file} not found')
+        return 1
+
+    print(f"\n{'=' * 60}")
+    print(f'  Step {step_id}: {description}')
+    print(f'  Script: {script_file}')
+    if config_name:
+        print(f'  Config: {config_name}')
+    print(f"{'=' * 60}\n")
+
+    env = dict(os.environ)
+    if config_name:
+        env['PIPELINE_CONFIG'] = config_name
+    if extra_env:
+        env.update(extra_env)
+
+    result = subprocess.run([sys.executable, script_path], cwd=SCRIPT_DIR, env=env)
+    if result.returncode == 0:
+        print(f'\n  Step {step_id} completed successfully.')
+    else:
+        print(f'\n  Step {step_id} FAILED (exit code {result.returncode}).')
+    return result.returncode
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Process one trial (steps 1–8) and compare it against another (step 9).')
+    parser.add_argument(
+        '--config-a', default='pipeline_config_CameraTest',
+        metavar='MODULE',
+        help='Config for the reference / comparison trial used in step 9. '
+             '(default: pipeline_config_CameraTest)')
+    parser.add_argument(
+        '--config-b', default='pipeline_config_OpenCap',
+        metavar='MODULE',
+        help='Config for the trial to process in steps 1–8 (and compare in step 9). '
+             '(default: pipeline_config_OpenCap)')
+    parser.add_argument(
+        '--steps', nargs='+', metavar='N',
+        help='Step numbers to run (default: all). E.g. --steps 1 3 9')
+    parser.add_argument(
+        '--list', action='store_true',
+        help='List available steps and exit')
+    args = parser.parse_args()
+
+    if args.list:
+        print('Available pipeline steps:')
+        for step_id, script, desc in PIPELINE:
+            print(f'  {step_id}  {script:50s}  {desc}')
+        return 0
+
+    sys.path.insert(0, SCRIPT_DIR)
+    import importlib
+    cfg_op = importlib.import_module(args.config_a)
+    cfg_oc = importlib.import_module(args.config_b)
+
+    print('\n--- Trial A (reference for step 9 comparison) ---')
+    cfg_op.print_summary()
+    print('\n--- Trial B (processed through steps 1–8, then compared) ---')
+    cfg_oc.print_summary()
+
+    # Select steps
+    if args.steps:
+        steps = [(sid, sf, sd) for sid, sf, sd in PIPELINE if sid in args.steps]
+        if not steps:
+            print(f'No matching steps for: {args.steps}')
+            print('Use --list to see available step numbers.')
+            return 1
+    else:
+        steps = PIPELINE
+
+    print(f"\nSteps to run: {', '.join(s[0] for s in steps)}")
+
+    results = {}
+    for step_id, script_file, description in steps:
+        # Steps 1–8: run under config-b (trial being processed).
+        # Step 9 (CompareTrials): pass both config names via env so it knows which to load.
+        if step_id == '9':
+            env_extra = {
+                'COMPARE_CONFIG_A': args.config_a,
+                'COMPARE_CONFIG_B': args.config_b,
+            }
+            config = None
+        else:
+            env_extra = None
+            config = args.config_b
+        results[step_id] = run_step(step_id, script_file, description,
+                                    config_name=config, extra_env=env_extra)
+
+    # Summary
+    print(f"\n{'=' * 60}")
+    print('Pipeline Summary')
+    print(f"{'=' * 60}")
+    for step_id, script_file, description in steps:
+        status = 'OK' if results[step_id] == 0 else 'FAILED'
+        print(f'  Step {step_id}: {status:6s}  {description}')
+
+    failed = [sid for sid, rc in results.items() if rc != 0]
+    if failed:
+        print(f'\n{len(failed)} step(s) failed: {", ".join(failed)}')
+        return 1
+    else:
+        print(f'\nAll {len(steps)} step(s) completed successfully.')
+        return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
