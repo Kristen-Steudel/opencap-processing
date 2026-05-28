@@ -77,7 +77,8 @@ def main():
 
     sys.path.insert(0, SCRIPT_DIR)
     import importlib
-    cfg = importlib.import_module(args.config)
+    config_name = args.config.removesuffix('.py')
+    cfg = importlib.import_module(config_name)
     cfg.print_summary()
 
     steps = [(sid, sf, sd) for sid, sf, sd in PIPELINE
@@ -91,7 +92,7 @@ def main():
     results = {}
     for step_id, script_file, description in steps:
         results[step_id] = run_step(step_id, script_file, description,
-                                    config_name=args.config)
+                                    config_name=config_name)
 
     print(f"\n{'=' * 60}")
     print('Pipeline Summary')

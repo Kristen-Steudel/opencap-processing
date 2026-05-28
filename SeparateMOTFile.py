@@ -1,13 +1,14 @@
-# Separate the .mot kinematics file into individual steps based on zero crossings
+# Separate the .mot kinematics file into individual stride segments
 
 import os
 import pandas as pd
 import numpy as np
 
 # %% Configuration
-stride_times_file = r'G:\Shared drives\Stanford Football\January_19\subject2\Kinematics\Outputs\stride_times.csv'
-mot_file = r'G:\Shared drives\Stanford Football\January_19\subject2\OpenSimData\OpenPose_default\3-cameras\Kinematics\ID2_S2_fly_LSTM.mot'
-output_dir = r'G:\Shared drives\Stanford Football\January_19\subject2\Kinematics\Outputs\Strides'
+stride_times_file = r'G:\Shared drives\Stanford Football\March_2\subject5\CleanedKinematics\Outputs\step_times.csv'
+# For the unfiltered kinematics
+mot_file          = r'G:\Shared drives\Stanford Football\March_2\subject5\OpenSimData\OpenPose_1x736_2scales\3-cameras\Kinematics\ID5_S7_sprint_LSTM.mot'
+output_dir        = r'G:\Shared drives\Stanford Football\March_2\subject5\CleanedKinematics\Outputs\Strides'
 
 # Create output directory if it doesn't exist
 os.makedirs(output_dir, exist_ok=True)

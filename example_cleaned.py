@@ -128,7 +128,7 @@ else:
     )
 
 # +++ ADD THIS LINE TO DEBUG +++
-print(f"--- Using model: {modelName}.osim ---") 
+print(f"--- Using model: {modelName} ---") 
 
 # Get neutral MTU lengths for normalization.
 def get_neutral_mtu_lengths(model_file_path):

@@ -97,8 +97,10 @@ def main():
 
     sys.path.insert(0, SCRIPT_DIR)
     import importlib
-    cfg_op = importlib.import_module(args.config_a)
-    cfg_oc = importlib.import_module(args.config_b)
+    config_a = args.config_a.removesuffix('.py')
+    config_b = args.config_b.removesuffix('.py')
+    cfg_op = importlib.import_module(config_a)
+    cfg_oc = importlib.import_module(config_b)
 
     print('\n--- Trial A (reference for step 9 comparison) ---')
     cfg_op.print_summary()
@@ -123,13 +125,13 @@ def main():
         # Step 9 (CompareTrials): pass both config names via env so it knows which to load.
         if step_id == '9':
             env_extra = {
-                'COMPARE_CONFIG_A': args.config_a,
-                'COMPARE_CONFIG_B': args.config_b,
+                'COMPARE_CONFIG_A': config_a,
+                'COMPARE_CONFIG_B': config_b,
             }
             config = None
         else:
             env_extra = None
-            config = args.config_b
+            config = config_b
         results[step_id] = run_step(step_id, script_file, description,
                                     config_name=config, extra_env=env_extra)
 

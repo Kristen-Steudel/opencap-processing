@@ -13,8 +13,9 @@ import os
 SUBJECT_NUM = 1
 DATE    = ''                   # no date subfolder in this dataset
 SESSION = ''                   # no session number in this dataset
-TRIAL_TYPE = 'sprint'         # matches the .mot filename prefix (e.g. sprint2_LSTM.mot)
+TRIAL_TYPE = 'sprint_trimmed'         # matches the .mot filename prefix (e.g. sprint2_LSTM.mot)
 OPENPOSE_VARIANT = 'OpenPose_1x736_2scales'
+TRIAL_LABEL = 'Sony / OpenPose 1x736'
 FILT_FREQ = 10                 # kinematics lowpass filter (Hz)
 COORD_FILTER_FREQ = 10         # coordinate value filter (Hz)
 MTU_LENGTH_FILTER_FREQ = -1    # muscle-tendon length filter (Hz)

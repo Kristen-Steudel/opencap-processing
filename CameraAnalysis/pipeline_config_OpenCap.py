@@ -23,6 +23,7 @@ DATE        = ''          # no date subfolder in this dataset
 SESSION     = ''          # no session number in this dataset
 TRIAL_TYPE  = 'sprint'  # must match the .mot filename (sprint_1.mot)
 
+TRIAL_LABEL = 'OpenCap (sprint_1)'
 FILT_FREQ             = 10    # kinematics lowpass filter (Hz)
 COORD_FILTER_FREQ     = 10    # coordinate-value filter (Hz)
 MTU_LENGTH_FILTER_FREQ = -1   # muscle-tendon length filter (Hz, -1 = off)
@@ -92,7 +93,7 @@ def build_paths():
     # -- compare_literature_bflh_nordsprint / PlotStrideKinematics ---------
     mot_file              = kinematics_filtered
     lit_file_nordsprint   = os.path.join(
-        LIT_DIR, 'NordSprintKinematics', 'All_Kinematics_Combined.csv')
+        LIT_DIR, 'NordSprintAllKinematics', 'All_Kinematics_Combined.csv')
     lit_file_nordsprint_all = os.path.join(
         LIT_DIR, 'NordSprintAllKinematics', 'All_Kinematics_Combined.csv')
     hamner_dir = os.path.join(LIT_DIR, 'SamHamnerKinematics')

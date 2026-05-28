@@ -37,8 +37,10 @@ print(f'Comparing  A: {_cfg_a_name}  vs  B: {_cfg_b_name}')
 N_COMPARE = 2                  # last N strides per leg per trial
 GC_PCT    = np.linspace(0, 100, 101)
 
-LABEL_A   = f'OpenPose 1x736  ({cfg_a.PATHS["file_tag"]})'
-LABEL_B   = f'OpenCap          ({cfg_b.PATHS["file_tag"]})'
+_label_a_base = getattr(cfg_a, 'TRIAL_LABEL', _cfg_a_name)
+_label_b_base = getattr(cfg_b, 'TRIAL_LABEL', _cfg_b_name)
+LABEL_A   = f'{_label_a_base}  ({cfg_a.PATHS["file_tag"]})'
+LABEL_B   = f'{_label_b_base}  ({cfg_b.PATHS["file_tag"]})'
 
 COLORS_A  = plt.cm.Blues(np.linspace(0.55, 0.85, N_COMPARE))
 COLORS_B  = plt.cm.Oranges(np.linspace(0.55, 0.85, N_COMPARE))

@@ -17,6 +17,8 @@ SESSION     = ''
 TRIAL_TYPE  = 'sprint_trimmed'              # → sprint_trimmed_LSTM.mot
 OPENPOSE_VARIANT = 'OpenPose_1x736_2scales'
 
+TRIAL_LABEL = 'Sony / OpenPose 1x736'
+
 FILT_FREQ              = 10
 COORD_FILTER_FREQ      = 10
 MTU_LENGTH_FILTER_FREQ = -1
@@ -74,7 +76,7 @@ def build_paths():
 
     mot_file             = kinematics_filtered
     lit_file_nordsprint  = os.path.join(
-        LIT_DIR, 'NordSprintKinematics', 'All_Kinematics_Combined.csv')
+        LIT_DIR, 'NordSprintAllKinematics', 'All_Kinematics_Combined.csv')
     lit_file_nordsprint_all = os.path.join(
         LIT_DIR, 'NordSprintAllKinematics', 'All_Kinematics_Combined.csv')
     hamner_dir = os.path.join(LIT_DIR, 'SamHamnerKinematics')

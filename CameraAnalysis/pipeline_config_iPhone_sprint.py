@@ -16,6 +16,8 @@ DATE        = ''
 SESSION     = ''
 TRIAL_TYPE  = 'sprint'          # → sprint.mot
 
+TRIAL_LABEL = 'iPhone / OpenCap'
+
 FILT_FREQ              = 10
 COORD_FILTER_FREQ      = 10
 MTU_LENGTH_FILTER_FREQ = -1
@@ -73,7 +75,7 @@ def build_paths():
 
     mot_file             = kinematics_filtered
     lit_file_nordsprint  = os.path.join(
-        LIT_DIR, 'NordSprintKinematics', 'All_Kinematics_Combined.csv')
+        LIT_DIR, 'NordSprintAllKinematics', 'All_Kinematics_Combined.csv')
     lit_file_nordsprint_all = os.path.join(
         LIT_DIR, 'NordSprintAllKinematics', 'All_Kinematics_Combined.csv')
     hamner_dir = os.path.join(LIT_DIR, 'SamHamnerKinematics')
