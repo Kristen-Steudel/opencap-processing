@@ -46,6 +46,7 @@ DEFAULTS = {
     'DATA_DIR': r'G:\Shared drives\Stanford Football',
     'LOCAL_DIR': r'C:\Users\steudelkri\Documents\opencap-processing',
     'OPENPOSE_VARIANT': 'OpenPose_1x736_2scales',
+    'POST_AUG_FOLDER': 'PostAugmentation_v0.3',
     'KIN_SUBFOLDER': 'Kinematics',
     'KIN_SUFFIX': '_LSTM',
     'TRIAL_TYPE_FILTER': None,   # None = all trial types found
@@ -174,6 +175,8 @@ DATE = '{date}'
 SESSION = '{session}'
 TRIAL_TYPE = '{trial_type}'
 OPENPOSE_VARIANT = '{openpose_variant}'
+POST_AUG_FOLDER = '{settings['POST_AUG_FOLDER']}'
+TRC_TIME_OFFSET = 'auto'
 FILT_FREQ = {filt_freq}
 COORD_FILTER_FREQ = {settings['COORD_FILTER_FREQ']}
 MTU_LENGTH_FILTER_FREQ = {settings['MTU_LENGTH_FILTER_FREQ']}
@@ -233,6 +236,17 @@ def build_paths():
     stride_vel_output_dir = os.path.join(
         subject_dir, 'Kinematics', 'Outputs', 'stride_velocities')
 
+    kinematics_marker_sto = os.path.join(
+        subject_dir, 'OpenSimData', OPENPOSE_VARIANT, '3-cameras',
+        KIN_SUBFOLDER, f'{{trial_stem}}_ik_model_marker_locations.sto')
+    post_augmentation_trc = os.path.join(
+        subject_dir, 'MarkerData', OPENPOSE_VARIANT, '3-cameras',
+        POST_AUG_FOLDER, f'{{trial_stem}}{{KIN_SUFFIX}}.trc')
+    marker_errors_csv = os.path.join(
+        outputs_dir, f'marker_errors_{{file_tag}}.csv')
+    marker_errors_sto = os.path.join(
+        outputs_dir, f'marker_errors_{{file_tag}}.sto')
+
     return {{
         'subject_dir': subject_dir,
         'trial_stem': trial_stem,
@@ -260,6 +274,10 @@ def build_paths():
         'stride_vel_output_dir': stride_vel_output_dir,
         'peak_bflh_angles_csv': os.path.join(
             outputs_dir, f'peak_bflh_angles_{{file_tag}}.csv'),
+        'kinematics_marker_sto': kinematics_marker_sto,
+        'post_augmentation_trc': post_augmentation_trc,
+        'marker_errors_csv': marker_errors_csv,
+        'marker_errors_sto': marker_errors_sto,
     }}
 
 

@@ -28,6 +28,7 @@ PIPELINE = [
     ('6', 'CalcStepVelReedMethodWithFlags.py',  'Calculate stride velocities (Reed)'),
     ('7', 'PlotStrideKinematics.py',            'Plot all joint angles per stride'),
     ('8', 'PeakBFLHAngles.py',                 'Extract angles at peak BFLH length per stride'),
+    ('9', 'ComputeMarkerErrors.py',            'Marker error: IK marker STO vs post-augmentation TRC'),
 ]
 
 
