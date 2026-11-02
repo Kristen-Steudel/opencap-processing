@@ -29,7 +29,7 @@ import utilsKinematics
 
 # ----- settings -----
 SUBJECTS = [8, 13, 16, 25, 34, 36, 54]
-FIRST_STRIDE_TIME = {  # Sam-says-Go (video clock) → black dashed line
+FIRST_STRIDE_TIME = {  # First identified stride time HRNet → black dashed line
     8: 4.893, 13: 5.002, 16: 5.265, 19: 6.19,
     25: 4.05, 34: 3.948, 36: 4.209, 54: 4.855,
 }
@@ -130,29 +130,52 @@ def process(subj):
     t = np.asarray(table.getIndependentColumn())
     pelvis_x = table.getDependentColumn('pelvis_tx').to_numpy()
     fs = 1.0 / np.mean(np.diff(t))
-    pelvis_f = lowpass(pelvis_x, cutoff=2, fs=fs)
+    pelvis_x_filt = lowpass(pelvis_x, cutoff=2, fs=fs)
 
     rows, series = [], []
-    for i in range(len(steps) - 1):
-        t0, t1 = steps.iloc[i]['time'], steps.iloc[i + 1]['time']
-        i0, i1 = np.argmin(np.abs(t - t0)), np.argmin(np.abs(t - t1))
-        if i1 <= i0:
-            i1 = i0 + 1
-        pos = pelvis_f[i0:i1 + 1]
-        tt = t[i0:i1 + 1]
-        vel = np.gradient(pos, tt) if len(tt) > 1 else np.array([0.0])
-        n = i + 1  # stride 1 = furthest from camera
+    for contact_i in range(len(steps) - 1):
+        # One stride = interval between consecutive foot contacts
+        start_time = steps.iloc[contact_i]['time']
+        end_time = steps.iloc[contact_i + 1]['time']
+        start_side = steps.iloc[contact_i]['side']
+        end_side = steps.iloc[contact_i + 1]['side']
+
+        # Indices of this step/stride within the full-run arrays (t, pelvis_x_filt)
+        start_idx_step = int(np.argmin(np.abs(t - start_time)))
+        end_idx_step = int(np.argmin(np.abs(t - end_time)))
+        if end_idx_step <= start_idx_step:
+            end_idx_step = start_idx_step + 1
+
+        stride_position = pelvis_x_filt[start_idx_step:end_idx_step + 1]
+        stride_time = t[start_idx_step:end_idx_step + 1]
+        stride_inst_vel = (
+            np.gradient(stride_position, stride_time)
+            if len(stride_time) > 1 else np.array([0.0]))
+
+        stride_number = contact_i + 1  # 1 = furthest from camera
+        displacement = pelvis_x_filt[end_idx_step] - pelvis_x_filt[start_idx_step]
+        duration = end_time - start_time
+        avg_velocity = displacement / duration  # Reed: Δx / Δt
+
         rows.append({
-            'stride_number': n,
-            'start_time': t0, 'end_time': t1,
-            'start_side': steps.iloc[i]['side'], 'end_side': steps.iloc[i + 1]['side'],
-            'stride_duration': t1 - t0,
-            'displacement': pelvis_f[i1] - pelvis_f[i0],
-            'avg_velocity': (pelvis_f[i1] - pelvis_f[i0]) / (t1 - t0),
-            'avg_position': float(np.mean(pos)),
-            'start_position': pelvis_f[i0], 'end_position': pelvis_f[i1],
+            'stride_number': stride_number,
+            'start_time': start_time,
+            'end_time': end_time,
+            'start_side': start_side,
+            'end_side': end_side,
+            'stride_duration': duration,
+            'displacement': displacement,
+            'avg_velocity': avg_velocity,
+            'avg_position': float(np.mean(stride_position)),
+            'start_position': pelvis_x_filt[start_idx_step],
+            'end_position': pelvis_x_filt[end_idx_step],
         })
-        series.append((n, tt - t0, pos, vel))
+        series.append((
+            stride_number,
+            stride_time - start_time,  # time relative to stride start
+            stride_position,
+            stride_inst_vel,
+        ))
 
     summary = pd.DataFrame(rows)
     os.makedirs(p['stride_dir'], exist_ok=True)
@@ -193,7 +216,7 @@ def process(subj):
 
     # quality plot
     fig, axes = plt.subplots(3, 1, figsize=(12, 9), sharex=False)
-    axes[0].plot(t, pelvis_f, color='C0')
+    axes[0].plot(t, pelvis_x_filt, color='C0')
     axes[0].axhline(DIST_THRESHOLD, color='orange', ls='--', label=f'threshold {DIST_THRESHOLD} m')
     for _, r in summary.iterrows():
         c = 'green' if r['stride_number'] in keep else 'red'
@@ -202,7 +225,7 @@ def process(subj):
     axes[0].set(ylabel='Pelvis x (m)', title=f'subject{subj} Reed stride quality')
     axes[0].legend(); axes[0].grid(alpha=0.3)
 
-    axes[1].plot(t, np.gradient(pelvis_f, t), color='C0')
+    axes[1].plot(t, np.gradient(pelvis_x_filt, t), color='C0')
     for _, r in summary.iterrows():
         c = 'green' if r['stride_number'] in keep else 'red'
         axes[1].axvspan(r['start_time'], r['end_time'], color=c, alpha=0.2)
