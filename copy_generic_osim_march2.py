@@ -23,12 +23,12 @@ import shutil
 
 DEFAULT_MARCH_2 = (
     '/Users/steudelk/Library/CloudStorage/GoogleDrive-steudelk@stanford.edu'
-    '/Shared drives/Stanford Football/March_2'
+    '/Shared drives/Stanford Football/January_26' # January_19, January_12
 )
 MODEL_REL = os.path.join(
     'OpenSimData', 'OpenPose_default', '3-cameras', 'Model')
 FILENAME = 'LaiUhlrich2022_generic.osim'
-SOURCE_SUBJECT = 66
+SOURCE_SUBJECT = 2
 
 SUBJECT_RE = re.compile(r'^subject(\d+)$', re.IGNORECASE)
 
