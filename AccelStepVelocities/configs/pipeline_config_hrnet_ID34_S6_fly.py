@@ -12,6 +12,7 @@ COORD_FILTER_FREQ = 10
 MTU_LENGTH_FILTER_FREQ = -1
 DIST_THRESHOLD = -12.0
 LIT_SPEEDS = ['7p0']
+FIRST_STRIDE_TIME = 3.948
 
 DATA_DIR = r'/Users/steudelk/Library/CloudStorage/GoogleDrive-steudelk@stanford.edu/Shared drives/Stanford Football'
 LOCAL_DIR = r'/Users/steudelk/Documents/Github/opencap-processing'
@@ -35,6 +36,7 @@ PATHS = {
     'kinematics_file_reed': r'/Users/steudelk/Library/CloudStorage/GoogleDrive-steudelk@stanford.edu/Shared drives/Stanford Football/February_23/subject34/OpenSimData/mmpose_0.8/Kinematics/ID34_S6_fly_LSTM_hip_flexion_adjusted.mot',
     'stride_vel_output_dir': r'/Users/steudelk/Documents/Github/opencap-processing/AccelStepVelocities/subject34/ID34_S6_fly/stride_velocities',
     'mot_file': r'/Users/steudelk/Library/CloudStorage/GoogleDrive-steudelk@stanford.edu/Shared drives/Stanford Football/February_23/subject34/OpenSimData/mmpose_0.8/Kinematics/ID34_S6_fly_LSTM_hip_flexion_adjusted.mot',
+    'first_stride_time': 3.948,
 }
 
 
@@ -46,6 +48,7 @@ def print_summary():
     print(f'  Date:           {DATE}')
     print(f'  Session:        {SESSION}')
     print(f'  Trial type:     {TRIAL_TYPE}')
+    print(f'  First stride:   {FIRST_STRIDE_TIME} s')
     print(f'  Kin input:      {PATHS["kinematics_input"]}')
     print(f'  Model:          {PATHS["model_path"]}')
     print(f'  Outputs dir:    {PATHS["outputs_dir"]}')

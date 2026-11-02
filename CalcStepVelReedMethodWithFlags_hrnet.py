@@ -30,7 +30,6 @@ dist_threshold = cfg.DIST_THRESHOLD
 step_times = paths['step_times_csv']
 kinematics_file = paths['kinematics_file_reed']
 
-
 def butter_lowpass_filter(data, cutoff=2, fs=1000, order=4):
     nyq = 0.5 * fs
     normal_cutoff = cutoff / nyq
@@ -97,11 +96,11 @@ def calculate_stride_velocities(pelvis_x_filtered, time, step_times_df):
         # Calculate average position for this stride (for quality assessment)
         avg_position = np.mean(stride_position)
 
-        # stride number counting up from the 0 mark
-        stride_number = total_strides - idx 
-        
+        # Stride 1 = furthest from camera (~-20 m); numbers increase toward 0 m
+        stride_number = idx + 1
+
         stride_data.append({
-            'stride_number': stride_number, #idx, 
+            'stride_number': stride_number,
             'start_time': start_time,
             'end_time': end_time,
             'start_side': start_side,
@@ -262,7 +261,8 @@ def filter_strides_by_quality(summary_df, stride_data, method='position', n_stri
     return filtered_df, valid_stride_numbers
 
 def visualize_stride_quality(time, pelvis_x_filtered, times_frame, summary_df, 
-                             valid_stride_numbers, output_dir, position_threshold=dist_threshold):
+                             valid_stride_numbers, output_dir, position_threshold=dist_threshold,
+                             first_stride_time=None):
     """
     Visualize which strides are kept vs filtered based on capture volume proximity
     """
@@ -277,9 +277,15 @@ def visualize_stride_quality(time, pelvis_x_filtered, times_frame, summary_df,
     for idx in range(len(times_frame) - 1):
         start_time = times_frame.iloc[idx]['time']
         end_time = times_frame.iloc[idx + 1]['time']
-        color = 'green' if idx in valid_stride_numbers else 'red'
-        alpha = 0.3 if idx in valid_stride_numbers else 0.15
+        stride_num = idx + 1
+        color = 'green' if stride_num in valid_stride_numbers else 'red'
+        alpha = 0.3 if stride_num in valid_stride_numbers else 0.15
         plt.axvspan(start_time, end_time, color=color, alpha=alpha)
+
+    if first_stride_time is not None:
+        plt.axvline(
+            x=first_stride_time, color='k', linestyle='--', linewidth=1.5,
+            label=f'First stride start ({first_stride_time:.3f} s)')
     
     plt.xlabel('Time (s)')
     plt.ylabel('Position (m)')
@@ -295,13 +301,20 @@ def visualize_stride_quality(time, pelvis_x_filtered, times_frame, summary_df,
     for idx in range(len(times_frame) - 1):
         start_time = times_frame.iloc[idx]['time']
         end_time = times_frame.iloc[idx + 1]['time']
-        color = 'green' if idx in valid_stride_numbers else 'red'
-        alpha = 0.3 if idx in valid_stride_numbers else 0.15
+        stride_num = idx + 1
+        color = 'green' if stride_num in valid_stride_numbers else 'red'
+        alpha = 0.3 if stride_num in valid_stride_numbers else 0.15
         plt.axvspan(start_time, end_time, color=color, alpha=alpha)
+
+    if first_stride_time is not None:
+        plt.axvline(
+            x=first_stride_time, color='k', linestyle='--', linewidth=1.5,
+            label=f'First stride start ({first_stride_time:.3f} s)')
     
     plt.xlabel('Time (s)')
     plt.ylabel('Velocity (m/s)')
     plt.title('Pelvis X Velocity Over Time')
+    plt.legend()
     plt.grid(True, alpha=0.3)
     
     # Plot 3: Average velocity per stride (absolute value for speed)
@@ -322,9 +335,9 @@ def visualize_stride_quality(time, pelvis_x_filtered, times_frame, summary_df,
     plt.bar(stride_numbers, avg_positions, color=colors, alpha=0.6, edgecolor='black')
     plt.axhline(y=position_threshold, color='orange', linestyle='--', linewidth=2, 
                 label=f'Threshold ({position_threshold}m)')
-    plt.xlabel('Stride Number')
+    plt.xlabel('Stride Number (1 = furthest from camera)')
     plt.ylabel('Average Position (m)')
-    plt.title('Average Position per Stride\n(Lower stride values = closer to capture volume at 0m)')
+    plt.title('Average Position per Stride\n(Stride 1 ≈ -20 m; higher numbers approach capture volume at 0 m)')
     plt.legend()
     plt.grid(True, axis='y', alpha=0.3)
     
@@ -415,8 +428,12 @@ print(f"\nFiltered summary saved to: {output_dir}/stride_velocity_summary_filter
 
 # Create detailed visualization
 print("\nGenerating visualizations...")
-visualize_stride_quality(time, pelvis_x_filtered, times_frame, summary_df, 
-                         valid_stride_numbers, output_dir, position_threshold=dist_threshold)
+first_stride_time = paths.get('first_stride_time')
+visualize_stride_quality(
+    time, pelvis_x_filtered, times_frame, summary_df,
+    valid_stride_numbers, output_dir, position_threshold=dist_threshold,
+    first_stride_time=first_stride_time)
+
 
 # Print statistics for valid strides only
 print(f"\n{'='*60}")
@@ -428,6 +445,19 @@ print(filtered_summary[['stride_number', 'avg_position', 'avg_velocity', 'stride
 print(f"\nSpeed statistics (absolute values):")
 speed_stats = np.abs(filtered_summary['avg_velocity']).describe()
 print(speed_stats)
+
+# Mean speed of 2nd-to-last and 3rd-to-last strides (all strides, camera-near end)
+if len(summary_df) >= 3:
+    s2 = summary_df.iloc[-2]
+    s3 = summary_df.iloc[-3]
+    speed2 = abs(s2['avg_velocity'])
+    speed3 = abs(s3['avg_velocity'])
+    mean_near = 0.5 * (speed2 + speed3)
+    print(
+        f"\nNear-camera speeds: stride {int(s3['stride_number'])}={speed3:.3f} m/s, "
+        f"stride {int(s2['stride_number'])}={speed2:.3f} m/s "
+        f"→ mean={mean_near:.3f} m/s"
+    )
 
 print(f"\nPosition statistics:")
 position_stats = filtered_summary['avg_position'].describe()

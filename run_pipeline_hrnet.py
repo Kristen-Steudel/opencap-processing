@@ -31,6 +31,19 @@ CONFIG_DIR = os.path.join(OUTPUT_ROOT, 'configs')
 
 SUBJECTS = [8, 13, 16, 25, 34, 36, 54]
 
+# Sam-says-Go times (full-length video clock). Plotted as black dashed
+# vertical lines marking the start of the first stride on time-series plots.
+SUBJECT_FIRST_STRIDE_TIME = {
+    8: 4.893,
+    13: 5.002,
+    16: 5.265,
+    19: 6.19,
+    25: 4.05,
+    34: 3.948,
+    36: 4.209,
+    54: 4.855,
+}
+
 DATA_DIR = (
     '/Users/steudelk/Library/CloudStorage/GoogleDrive-steudelk@stanford.edu'
     '/Shared drives/Stanford Football'
@@ -93,6 +106,7 @@ def write_subject_config(subject_num):
     model = model_path(subject_num)
     out = outputs_dir(subject_num)
     stride_out = os.path.join(out, 'stride_velocities')
+    first_stride_time = SUBJECT_FIRST_STRIDE_TIME.get(subject_num)
 
     content = textwrap.dedent(f'''\
     """Auto-generated HRNet config for subject {subject_num}."""
@@ -109,6 +123,7 @@ def write_subject_config(subject_num):
     MTU_LENGTH_FILTER_FREQ = -1
     DIST_THRESHOLD = {DIST_THRESHOLD}
     LIT_SPEEDS = ['7p0']
+    FIRST_STRIDE_TIME = {first_stride_time!r}
 
     DATA_DIR = r'{DATA_DIR}'
     LOCAL_DIR = r'{SCRIPT_DIR}'
@@ -132,6 +147,7 @@ def write_subject_config(subject_num):
         'kinematics_file_reed': r'{kin}',
         'stride_vel_output_dir': r'{stride_out}',
         'mot_file': r'{kin}',
+        'first_stride_time': {first_stride_time!r},
     }}
 
 
@@ -143,6 +159,7 @@ def write_subject_config(subject_num):
         print(f'  Date:           {{DATE}}')
         print(f'  Session:        {{SESSION}}')
         print(f'  Trial type:     {{TRIAL_TYPE}}')
+        print(f'  First stride:   {{FIRST_STRIDE_TIME}} s')
         print(f'  Kin input:      {{PATHS["kinematics_input"]}}')
         print(f'  Model:          {{PATHS["model_path"]}}')
         print(f'  Outputs dir:    {{PATHS["outputs_dir"]}}')

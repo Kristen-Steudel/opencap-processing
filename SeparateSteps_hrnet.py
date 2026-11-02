@@ -102,6 +102,11 @@ def main():
         color='orange', s=100, marker='^', zorder=5,
         label=f'Right zero crossings (n={len(right_crossing_times)})')
     plt.axhline(y=0, color='k', linestyle='-', linewidth=0.5, alpha=0.5)
+    first_stride_time = paths.get('first_stride_time')
+    if first_stride_time is not None:
+        plt.axvline(
+            x=first_stride_time, color='k', linestyle='--', linewidth=1.5,
+            label=f'First stride start ({first_stride_time:.3f} s)')
     plt.xlabel('Time (s)', fontsize=12)
     plt.ylabel('Angular Velocity (rad/s)', fontsize=12)
     plt.title(
